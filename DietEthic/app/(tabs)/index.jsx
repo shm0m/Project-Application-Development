@@ -2,19 +2,20 @@ import React from 'react';
 import {Text,Image,StyleSheet,Button,SafeAreaView,Statusbar} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createDrawerNavigator} from '@react-navigation/drawer';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useNavigation} from '@react-navigation/native';
 import Paris from '../../components/Paris';
 import London from '../../components/London';
 
 
 export default function Index() {
-  const Drawer = createDrawerNavigator();
+  const Tab = createBottomTabNavigator();
   return (
     <NavigationContainer independent={true}>
-      <Drawer.Navigator initialRouteName='Paris'>
-        <Drawer.Screen name='Paris' component={Paris}></Drawer.Screen>
-        <Drawer.Screen name='London' component={London}></Drawer.Screen>
-      </Drawer.Navigator>
+      <Tab.Navigator>
+        <Tab.Screen name='Paris' component={Paris} initialRouteName='Paris'></Tab.Screen>
+        <Tab.Screen name='London' component={London} initialRouteName='London'></Tab.Screen>
+      </Tab.Navigator>
     </NavigationContainer>
     
   );
