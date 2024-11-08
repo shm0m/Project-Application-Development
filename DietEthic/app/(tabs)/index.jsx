@@ -3,8 +3,8 @@ import {Text,Image,StyleSheet,Button,SafeAreaView,Statusbar} from 'react-native'
 import {NavigationContainer} from '@react-navigation/native';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import {useNavigation} from '@react-navigation/native';
-import Paris from './components/Paris';
-import London from './components/London';
+import Paris from '../components/Paris';
+import London from '../components/London';
 
 
 export default function Index() {
