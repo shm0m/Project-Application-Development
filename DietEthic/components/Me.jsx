@@ -1,26 +1,3 @@
-/*import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-
-export default function Me() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Bienvenue dans l'espace personel!</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-});*/
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
@@ -29,7 +6,7 @@ const ProfileScreen = () => {
   const [name, setName] = useState('');
   const [gender, setGender] = useState(null);
   const [age, setAge] = useState('');
-  const [weightGoal, setWeightGoal] = useState(null);
+  const [Goal, setGoal] = useState(null);
   const [dietaryRestrictions, setDietaryRestrictions] = useState([]);
   const [favoriteCuisines, setFavoriteCuisines] = useState([]);
 
@@ -48,7 +25,7 @@ const ProfileScreen = () => {
       name,
       gender,
       age,
-      weightGoal,
+      Goal,
       dietaryRestrictions,
       favoriteCuisines,
     };
@@ -94,14 +71,14 @@ const ProfileScreen = () => {
       <Text style={styles.label}>Weight Goals</Text>
       <View style={styles.buttonGroup}>
         <TouchableOpacity
-          style={[styles.button, weightGoal === 'Lose Weight' && styles.buttonSelected]}
-          onPress={() => setWeightGoal('Lose Weight')}
+          style={[styles.button, Goal === 'Lose Weight' && styles.buttonSelected]}
+          onPress={() => setGoal('Lose Weight')}
         >
           <Text style={styles.buttonText}>Lose Weight</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, weightGoal === 'Gain Weight' && styles.buttonSelected]}
-          onPress={() => setWeightGoal('Gain Weight')}
+          style={[styles.button, Goal === 'Gain Weight' && styles.buttonSelected]}
+          onPress={() => setGoal('Gain Weight')}
         >
           <Text style={styles.buttonText}>Gain Weight</Text>
         </TouchableOpacity>
