@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"; 
 
 import HomePage from "../components/HomePage";
-import Me from "../components/Me";
+import Form from "../components/Form";
 
 const Tab = createBottomTabNavigator();
 
@@ -12,7 +12,7 @@ export default function Index() {
     <NavigationContainer independent={true}>
       <Tab.Navigator initialRouteName="HomePage">
         <Tab.Screen name="HomePage" component={HomePage} />
-        <Tab.Screen name="Me" component={Me} />
+        <Tab.Screen name="Form" component={Form} />
       </Tab.Navigator>
     </NavigationContainer>
   );
