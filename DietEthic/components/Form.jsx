@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet } from 'react-native';
 
-const ProfileScreen = () => {
+const ProfileScreen = ({navigation}) => {
   // State variables to store form inputs
   const [name, setName] = useState('');
   const [gender, setGender] = useState(null);
@@ -115,6 +115,7 @@ const ProfileScreen = () => {
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
         <Text style={styles.saveButtonText}>Save Profile</Text>
       </TouchableOpacity>
+      <Button title="Go to Profil" onPress={()=>(navigation.navigate("Profil", {name, gender, age, Goal, dietaryRestrictions, favoriteCuisines}))}/>
     </View>
   );
 };
