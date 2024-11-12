@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function HomePage() {
   return (
     <View style={styles.container}>
-      <Text placeholder="Enter your name" style={styles.text}>Bienvenue dans la page d'accueil</Text>
+      <Text style={styles.text}>Bienvenue dans la page d'accueil</Text>
     </View>
   );
 }
