@@ -13,6 +13,7 @@ export default function Index() {
       <Tab.Navigator initialRouteName="HomePage">
         <Tab.Screen name="HomePage" component={HomePage} />
         <Tab.Screen name="Form" component={Form} />
+        <Tab.Screen name="Login" component={Login} />
       </Tab.Navigator>
     </NavigationContainer>
   );
