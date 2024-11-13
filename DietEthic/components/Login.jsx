@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 
-const Login = () => {
+export default Login = () => {
     return (
+        <SafeAreaView style={styles.container}>
         <View style={styles.container}>
             <Text style={styles.title}>Connexion</Text>
             <Text style={styles.description}>Connectez-vous pour accéder à votre compte.</Text>
             <Text style={styles.button}>Se connecter</Text>
         </View>
+        </SafeAreaView>
     );
 };
 
