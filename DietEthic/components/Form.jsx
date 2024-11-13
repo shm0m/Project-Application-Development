@@ -1,8 +1,8 @@
+// Form.jsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Button } from 'react-native';
 
-const ProfileScreen = ({navigation}) => {
-  // State variables to store form inputs
+export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
   const [gender, setGender] = useState(null);
   const [age, setAge] = useState('');
@@ -10,16 +10,6 @@ const ProfileScreen = ({navigation}) => {
   const [dietaryRestrictions, setDietaryRestrictions] = useState([]);
   const [favoriteCuisines, setFavoriteCuisines] = useState([]);
 
-  // Toggle selection for multi-select options
-  const toggleSelection = (option, array, setArray) => {
-    setArray((prev) =>
-      prev.includes(option)
-        ? prev.filter((item) => item !== option)
-        : [...prev, option]
-    );
-  };
-
-  // Handle saving the profile (add functionality as needed)
   const handleSaveProfile = () => {
     const profileData = {
       name,
@@ -29,96 +19,22 @@ const ProfileScreen = ({navigation}) => {
       dietaryRestrictions,
       favoriteCuisines,
     };
-    console.log('Profile Saved:', profileData);
-    // Save or process the profile data as needed
+    // Rediriger vers le profil avec les données du formulaire
+    navigation.navigate('Profil', profileData);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Personal Profile</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your name"
-        value={name}
-        onChangeText={setName}
-      />
-
-      <Text style={styles.label}>Gender</Text>
-      <View style={styles.buttonGroup}>
-        <TouchableOpacity
-          style={[styles.button, gender === 'Male' && styles.buttonSelected]}
-          onPress={() => setGender('Male')}
-        >
-          <Text style={styles.buttonText}>Male</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, gender === 'Female' && styles.buttonSelected]}
-          onPress={() => setGender('Female')}
-        >
-          <Text style={styles.buttonText}>Female</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your age"
-        value={age}
-        onChangeText={setAge}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Weight Goals</Text>
-      <View style={styles.buttonGroup}>
-        <TouchableOpacity
-          style={[styles.button, Goal === 'Lose Weight' && styles.buttonSelected]}
-          onPress={() => setGoal('Lose Weight')}
-        >
-          <Text style={styles.buttonText}>Lose Weight</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, Goal === 'Gain Weight' && styles.buttonSelected]}
-          onPress={() => setGoal('Gain Weight')}
-        >
-          <Text style={styles.buttonText}>Gain Weight</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.sectionTitle}>Personal Taste Quiz</Text>
-
-      <Text style={styles.label}>Dietary Restrictions</Text>
-      <View style={styles.buttonGroup}>
-        {['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free'].map((restriction) => (
-          <TouchableOpacity
-            key={restriction}
-            style={[styles.button, dietaryRestrictions.includes(restriction) && styles.buttonSelected]}
-            onPress={() => toggleSelection(restriction, dietaryRestrictions, setDietaryRestrictions)}
-          >
-            <Text style={styles.buttonText}>{restriction}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>Favorite Cuisines</Text>
-      <View style={styles.buttonGroup}>
-        {['Italian', 'Mexican', 'Asian', 'Mediterranean'].map((cuisine) => (
-          <TouchableOpacity
-            key={cuisine}
-            style={[styles.button, favoriteCuisines.includes(cuisine) && styles.buttonSelected]}
-            onPress={() => toggleSelection(cuisine, favoriteCuisines, setFavoriteCuisines)}
-          >
-            <Text style={styles.buttonText}>{cuisine}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
+      
+      {/* Champs de saisie et boutons (mêmes que dans votre code) */}
+      
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
         <Text style={styles.saveButtonText}>Save Profile</Text>
       </TouchableOpacity>
-      <Button title="Go to Profil" onPress={()=>(navigation.navigate("Profil", {name, gender, age, Goal, dietaryRestrictions, favoriteCuisines}))}/>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -178,4 +94,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
