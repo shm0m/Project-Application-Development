@@ -8,15 +8,15 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     if (email && password) {
-      // Si l'email et le mot de passe sont valides, naviguer vers Profil
-      navigation.navigate('Profil', { email });
+      // Si l'email et le mot de passe sont valides, naviguer vers l'onglet principal
+      navigation.navigate('Main');  // On utilise 'Main' pour afficher les onglets après la connexion
     } else {
       alert('Please enter your email and password');
     }
   };
 
   const navigateToSignUp = () => {
-    // Navigation vers la page Form (inscription)
+    // Navigation vers la page Form pour l'inscription
     navigation.navigate('Form');
   };
 
@@ -58,45 +58,45 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#FFF',
-        paddingHorizontal: 20,
-      },
-      title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#6A4FD8', // Couleur violette
-        marginBottom: 30,
-      },
-      input: {
-        backgroundColor: '#E5E0FF',
-        borderRadius: 25,
-        width: '100%',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        fontSize: 16,
-        color: '#333',
-        marginBottom: 15,
-      },
-      buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginTop: 20,
-      },
-      button: {
-        backgroundColor: '#6A4FD8',
-        borderRadius: 25,
-        paddingVertical: 10,
-        paddingHorizontal: 25,
-        marginHorizontal: 5,
-      },
-      buttonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-      },
-    });
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#6A4FD8', // Couleur violette
+    marginBottom: 30,
+  },
+  input: {
+    backgroundColor: '#E5E0FF',
+    borderRadius: 25,
+    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 15,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
+  },
+  button: {
+    backgroundColor: '#6A4FD8',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    marginHorizontal: 5,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
