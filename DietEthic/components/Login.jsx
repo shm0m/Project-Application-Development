@@ -9,7 +9,7 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = () => {
     if (email && password) {
       // Si l'email et le mot de passe sont valides, naviguer vers l'onglet principal
-      navigation.navigate('Main');  // On utilise 'Main' pour afficher les onglets après la connexion
+      navigation.navigate('Profil'); 
     } else {
       alert('Please enter your email and password');
     }
