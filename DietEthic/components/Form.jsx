@@ -9,6 +9,8 @@ export default function FormScreen({ navigation }) {
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState(null);
   const [goal, setGoal] = useState(null);
+  const [mail, setMail] = useState('');
+  const [password, setPassword] = useState('');
   const [dietaryRestrictions, setDietaryRestrictions] = useState([]);
   const [favoriteCuisines, setFavoriteCuisines] = useState([]);
 
@@ -70,6 +72,24 @@ export default function FormScreen({ navigation }) {
         onChangeText={setWeight}
         keyboardType="numeric"
       />
+
+      {/* Mail Field */}
+      <TextInput
+         style={styles.input}
+         placeholder="Mail"
+         value={mail }
+         onChangeText={setMail}
+      />
+
+      {/* PassWord Field */}
+      <TextInput
+      style={styles.input}
+      placeholder="Password"
+      value={password}
+      onChangeText={setPassword}
+      secureTextEntry={true}
+    />
+
 
       {/* Gender Selection */}
       <Text style={styles.label}>Gender</Text>
