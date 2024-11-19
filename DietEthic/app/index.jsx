@@ -18,6 +18,7 @@ function Espaces_personnels() {
   return (
     
       <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+        
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Profil" component={ProfilScreen} /> 
         <Stack.Screen name="Form" component={FormScreen} />
@@ -27,16 +28,19 @@ function Espaces_personnels() {
 }
 
 
+
 export default function Index() {
   return (
-    <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomePage} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Profil" component={ProfilScreen} />
+      <Stack.Screen name="Form" component={FormScreen} />
       <Stack.Screen name="Main">
         {() => (
-          <Tab.Navigator initialRouteName="Me"screenOptions={{ headerShown: false }}>
+          <Tab.Navigator screenOptions={{ headerShown: false }}>
             <Tab.Screen name="MealPlan" component={MealPlan} />
             <Tab.Screen name="Graph" component={Graph} />
-            <Tab.Screen name="Me" component={Espaces_personnels} />
           </Tab.Navigator>
         )}
       </Stack.Screen>
