@@ -8,18 +8,18 @@ export default function MealPlan() {
       <Text style={styles.subtitle}>Plan Suggestions</Text>
 
       <TouchableOpacity style={styles.card}>
-        <Image source={{ uri: 'https://example.com/image1.jpg' }} style={styles.image} />
-        <Text style={styles.cardText}>100 Days Healthy Foods</Text>
+        <Image source={{ uri: 'https://www.buzzwebzine.fr/wp-content/uploads/2022/02/petit-dejeuner-anglais-1-1024x576.jpg' }} style={styles.image} />
+        <Text style={styles.cardText}>100 days Breakfast </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.card}>
-        <Image source={{ uri: 'https://example.com/image2.jpg' }} style={styles.image} />
-        <Text style={styles.cardText}>28 Days Balanced Healthy Foods</Text>
+        <Image source={{ uri: 'https://metro.co.uk/wp-content/uploads/2023/01/SEI_140890509-9e32.jpg?quality=90&strip=all' }} style={styles.image} />
+        <Text style={styles.cardText}>Healthy Lunch</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.card}>
-        <Image source={{ uri: 'https://example.com/image3.jpg' }} style={styles.image} />
-        <Text style={styles.cardText}>14 Days Bulking Foods</Text>
+        <Image source={{ uri: 'https://delhibrasserie.com/wp-content/uploads/2023/11/indian-cuisine-in-london.webp' }} style={styles.image} />
+        <Text style={styles.cardText}>Dinner</Text>
       </TouchableOpacity>
     </ScrollView>
   );
