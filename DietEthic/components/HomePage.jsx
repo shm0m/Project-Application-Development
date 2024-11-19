@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
@@ -25,7 +20,7 @@ export default function HomePage() {
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Me' }],
+              routes: [{ name: 'Login' }],
             })
           );
         }, 1000);
