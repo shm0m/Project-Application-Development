@@ -20,7 +20,7 @@ export default function HomePage() {
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Main' }],
+              routes: [{ name: 'Login' }],
             })
           );
         }, 1000);
