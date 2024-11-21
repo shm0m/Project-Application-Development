@@ -7,15 +7,15 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configuration MySQL
+
 const db = mysql.createConnection({
   host: 'localhost',
-  user: 'root', 
-  password: '',
-  database: 'my_database', 
+  user: 'root', // Remplacez par votre utilisateur MySQL
+  password: '', // Remplacez par votre mot de passe MySQL
+  database: 'my_database', // Nom de votre base
 });
 
-// Connecter à MySQL
+
 db.connect(err => {
   if (err) {
     console.error('Erreur de connexion :', err);
@@ -24,7 +24,6 @@ db.connect(err => {
   console.log('Connecté à la base MySQL');
 });
 
-// Exemple de route
 app.get('/users', (req, res) => {
   db.query('SELECT * FROM users', (err, results) => {
     if (err) {
