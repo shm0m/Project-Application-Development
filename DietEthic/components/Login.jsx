@@ -1,6 +1,6 @@
-// Login.jsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { CommonActions } from '@react-navigation/native';  // Ajoutez cette ligne
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -8,8 +8,13 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     if (email && password) {
-      // Si l'email et le mot de passe sont valides, naviguer vers l'onglet principal
-      navigation.navigate('Profil'); 
+      // Si l'email et le mot de passe sont valides, naviguer vers Main
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        })
+      );
     } else {
       alert('Please enter your email and password');
     }
