@@ -13,21 +13,15 @@ import Graph from '../components/Graph';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Création du Tab Navigator pour les écrans principaux
-function Espaces_personnels() {
+// Création du composant TabNavigator séparé
+function TabNavigator() {
   return (
-    
-      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-        
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Profil" component={ProfilScreen} /> 
-        <Stack.Screen name="Form" component={FormScreen} />
-      </Stack.Navigator>
-    
+    <Tab.Navigator screenOptions={{ headerShown: false }}>
+      <Tab.Screen name="MealPlan" component={MealPlan} />
+      <Tab.Screen name="Graph" component={Graph} />
+    </Tab.Navigator>
   );
 }
-
-
 
 export default function Index() {
   return (
@@ -36,14 +30,7 @@ export default function Index() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Profil" component={ProfilScreen} />
       <Stack.Screen name="Form" component={FormScreen} />
-      <Stack.Screen name="Main">
-        {() => (
-          <Tab.Navigator screenOptions={{ headerShown: false }}>
-            <Tab.Screen name="MealPlan" component={MealPlan} />
-            <Tab.Screen name="Graph" component={Graph} />
-          </Tab.Navigator>
-        )}
-      </Stack.Screen>
+      <Stack.Screen name="Main" component={TabNavigator} />
     </Stack.Navigator>
   );
 }
