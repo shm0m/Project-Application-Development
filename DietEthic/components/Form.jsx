@@ -1,6 +1,6 @@
-// Form.jsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { CommonActions } from '@react-navigation/native';  // Ajoutez cette ligne
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -31,9 +31,14 @@ export default function FormScreen({ navigation }) {
       dietaryRestrictions,
       favoriteCuisines,
     };
-    navigation.navigate('Profil', profileData);
+    // Rediriger vers Main au lieu de Profil
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      })
+    );
   };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Personal Informations</Text>
