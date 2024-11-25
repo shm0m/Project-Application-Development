@@ -10,6 +10,11 @@ import HomePage from '../components/HomePage';
 import MealPlan from '../components/MealPlan';
 import Graph from '../components/Graph';
 
+// Modifier ces importations
+import Breakfast from '../components/Breakfast';
+import Lunch from '../components/Lunch';
+import Dinner from '../components/Dinner';
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
@@ -17,9 +22,21 @@ const Stack = createStackNavigator();
 function TabNavigator() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="MealPlan" component={MealPlan} />
+      <Tab.Screen name="MealPlan" component={MealPlanStack} />
       <Tab.Screen name="Graph" component={Graph} />
     </Tab.Navigator>
+  );
+}
+
+// Création d'une pile spécifique pour MealPlan et ses sous-écrans
+function MealPlanStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MealPlan" component={MealPlan} />
+      <Stack.Screen name="Breakfast" component={Breakfast} />
+      <Stack.Screen name="Lunch" component={Lunch} />
+      <Stack.Screen name="Dinner" component={Dinner} />
+    </Stack.Navigator>
   );
 }
 

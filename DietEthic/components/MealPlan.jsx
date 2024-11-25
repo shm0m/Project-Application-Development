@@ -1,25 +1,25 @@
 import React from 'react';
 import { Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 
-export default function MealPlan() {
+export default function MealPlan({ navigation }) {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>Plan Suggestions</Text>
 
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Breakfast')}>
         <Image source={{ uri: 'https://www.buzzwebzine.fr/wp-content/uploads/2022/02/petit-dejeuner-anglais-1-1024x576.jpg' }} style={styles.image} />
-        <Text style={styles.cardText}>100 days Breakfast </Text>
+        <Text style={styles.cardText}> Breakfast </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card}>
-        <Image source={{ uri: 'https://metro.co.uk/wp-content/uploads/2023/01/SEI_140890509-9e32.jpg?quality=90&strip=all' }} style={styles.image} />
-        <Text style={styles.cardText}>Healthy Lunch</Text>
+      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Lunch')}>
+        <Image source={{ uri: 'https://i.pinimg.com/736x/7d/48/d7/7d48d7eecd31eefbe56fc86fde3406ca.jpg' }} style={styles.image} />
+        <Text style={styles.cardText}> Lunch</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Dinner')}>
         <Image source={{ uri: 'https://delhibrasserie.com/wp-content/uploads/2023/11/indian-cuisine-in-london.webp' }} style={styles.image} />
-        <Text style={styles.cardText}>Dinner</Text>
+        <Text style={styles.cardText}> Dinner </Text>
       </TouchableOpacity>
     </ScrollView>
   );
