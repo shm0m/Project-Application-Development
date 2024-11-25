@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { CommonActions } from '@react-navigation/native';  // Ajoutez cette ligne
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -20,7 +20,38 @@ export default function FormScreen({ navigation }) {
     );
   };
 
+  // Fonction pour calculer le BMI
+  const calculateBMI = () => {
+    const heightInMeters = parseFloat(height) / 100; // Convertir en mètres
+    const weightInKg = parseFloat(weight);
+    if (!heightInMeters || !weightInKg) return null; // Vérifier si les valeurs sont valides
+    return (weightInKg / (heightInMeters ** 2)).toFixed(2); // Formule BMI
+  };
+
+  // Fonction pour calculer le BMR
+  const calculateBMR = () => {
+    const weightInKg = parseFloat(weight);
+    const heightInCm = parseFloat(height);
+    const ageInYears = parseInt(age);
+    if (!weightInKg || !heightInCm || !ageInYears || !gender) return null; // Vérifier si les valeurs sont valides
+
+    if (gender === 'Male') {
+      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears + 5).toFixed(2); // Formule pour homme
+    } else if (gender === 'Female') {
+      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears - 161).toFixed(2); // Formule pour femme
+    }
+    return null;
+  };
+
   const handleSaveProfile = () => {
+    const bmi = calculateBMI();
+    const bmr = calculateBMR();
+
+    if (!bmi || !bmr || !mail || !password) {
+      Alert.alert('Error', 'Please ensure all fields are filled correctly.');
+      return;
+    }
+
     const profileData = {
       name,
       age,
@@ -30,15 +61,19 @@ export default function FormScreen({ navigation }) {
       goal,
       dietaryRestrictions,
       favoriteCuisines,
+      mail,
+      password,
+      bmi,
+      bmr,
     };
-    // Rediriger vers Main au lieu de Profil
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      })
+
+    Alert.alert(
+      'Profile Saved',
+      `Your BMI is ${bmi} and your BMR is ${bmr}.`,
+      [{ text: 'OK', onPress: () => navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] })) }]
     );
   };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Personal Informations</Text>
@@ -49,6 +84,25 @@ export default function FormScreen({ navigation }) {
         placeholder="Name"
         value={name}
         onChangeText={setName}
+      />
+
+      {/* Email Field */}
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={mail}
+        onChangeText={setMail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+
+      {/* Password Field */}
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
       />
 
       {/* Age Field */}
@@ -63,7 +117,7 @@ export default function FormScreen({ navigation }) {
       {/* Height Field */}
       <TextInput
         style={styles.input}
-        placeholder="Height"
+        placeholder="Height (cm)"
         value={height}
         onChangeText={setHeight}
         keyboardType="numeric"
@@ -72,29 +126,11 @@ export default function FormScreen({ navigation }) {
       {/* Weight Field */}
       <TextInput
         style={styles.input}
-        placeholder="Weight"
+        placeholder="Weight (kg)"
         value={weight}
         onChangeText={setWeight}
         keyboardType="numeric"
       />
-
-      {/* Mail Field */}
-      <TextInput
-         style={styles.input}
-         placeholder="Mail"
-         value={mail }
-         onChangeText={setMail}
-      />
-
-      {/* PassWord Field */}
-      <TextInput
-      style={styles.input}
-      placeholder="Password"
-      value={password}
-      onChangeText={setPassword}
-      secureTextEntry={true}
-    />
-
 
       {/* Gender Selection */}
       <Text style={styles.label}>Gender</Text>
@@ -124,36 +160,6 @@ export default function FormScreen({ navigation }) {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Personal Test Quizz</Text>
-
-      {/* Dietary Restrictions */}
-      <Text style={styles.label}>Dietary Restrictions</Text>
-      <View style={styles.buttonGroup}>
-        {["Vegetarian", "Vegan", "Gluten-free", "Dairy-free"].map((restriction) => (
-          <TouchableOpacity
-            key={restriction}
-            style={[styles.button, dietaryRestrictions.includes(restriction) && styles.buttonSelected]}
-            onPress={() => toggleSelection(restriction, dietaryRestrictions, setDietaryRestrictions)}
-          >
-            <Text style={styles.buttonText}>{restriction}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Favorite Cuisines */}
-      <Text style={styles.label}>Favorite Cuisines</Text>
-      <View style={styles.buttonGroup}>
-        {["Asian", "French", "Italian", "Mexican", "Mediterranean"].map((cuisine) => (
-          <TouchableOpacity
-            key={cuisine}
-            style={[styles.button, favoriteCuisines.includes(cuisine) && styles.buttonSelected]}
-            onPress={() => toggleSelection(cuisine, favoriteCuisines, setFavoriteCuisines)}
-          >
-            <Text style={styles.buttonText}>{cuisine}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
         <Text style={styles.saveButtonText}>Save Profile</Text>
       </TouchableOpacity>
@@ -166,6 +172,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#F2F2F2',
   },
+
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -173,6 +180,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+
   input: {
     backgroundColor: '#E5E0FF',
     borderRadius: 25,
@@ -182,17 +190,20 @@ const styles = StyleSheet.create({
     color: '#333',
     paddingHorizontal: 20,
   },
+
   label: {
     fontSize: 16,
     marginVertical: 10,
     fontWeight: 'bold',
     color: '#6A4FD8',
   },
+
   buttonGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: 15,
   },
+
   button: {
     backgroundColor: '#E5E0FF',
     paddingVertical: 10,
@@ -200,9 +211,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     margin: 5,
   },
+
   buttonSelected: {
     backgroundColor: '#6A4FD8',
   },
+
   buttonText: {
     color: '#FFF',
     fontWeight: 'bold',
