@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, ScrollView, View, Image } from 'react-native';
+import { Text, StyleSheet, ScrollView, View, Image, TouchableOpacity } from 'react-native';
 
 const breakfastOptions = [
   { name: 'Pancakes', calories: 350, image: 'https://i.pinimg.com/474x/25/72/3f/25723ff7d7b63a89265b6a9d1c6de237.jpg' },
@@ -34,7 +34,9 @@ const breakfastOptions = [
   
 ];
 
-export default function Breakfast() {
+export default function Breakfast({ route }) {
+  const { addMeal } = route.params;
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Breakfast Options</Text>
@@ -45,6 +47,9 @@ export default function Breakfast() {
             <Text style={styles.itemText}>{item.name}</Text>
             <Text style={styles.calories}>{item.calories} kcal</Text>
           </View>
+          <TouchableOpacity onPress={() => addMeal(item, 'Breakfast')} style={styles.addButton}>
+            <Text style={styles.addButtonText}>Add</Text>
+          </TouchableOpacity>
         </View>
       ))}
     </ScrollView>
@@ -65,9 +70,7 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
     marginBottom: 15,
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    alignItems: 'center',
   },
   image: {
     width: 80,
@@ -77,6 +80,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     justifyContent: 'center',
+    flex: 1,
   },
   itemText: {
     fontSize: 18,
@@ -85,5 +89,15 @@ const styles = StyleSheet.create({
   calories: {
     fontSize: 16,
     color: '#888',
+  },
+  addButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
