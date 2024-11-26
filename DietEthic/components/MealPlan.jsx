@@ -8,6 +8,13 @@ export default function MealPlan({ navigation }) {
   const userCalorieNeeds = 1900;
 
   const addMeal = (meal, type) => {
+    const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
+
+    if (totalCalories + meal.calories > userCalorieNeeds + 50) {
+      Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
+      return;
+    }
+
     setSelectedMeals((prev) => [...prev, { ...meal, type }]);
   };
 
@@ -25,12 +32,14 @@ export default function MealPlan({ navigation }) {
   const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
   // Vérification des limites caloriques avec une marge de 100 kcal en dessous
-  let calorieMessage = '';
-  if (totalCalories > userCalorieNeeds+50) {
-    calorieMessage = 'Sorry, you need to change your meal plan, too many calories.';
+  if (totalCalories > userCalorieNeeds + 50) {
+    Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
   } else if (totalCalories < userCalorieNeeds - 100) {
-    calorieMessage = 'Sorry, you need to add a meal, not enough calories.';
+    Alert.alert('Calorie Deficit', 'You need to add more meals to reach your calorie goal.');
   }
+
+  // Vérifie si les repas peuvent être ajoutés
+  const canAddMoreMeals = totalCalories <= userCalorieNeeds + 50;
 
   return (
     <ScrollView style={styles.container}>
@@ -39,8 +48,9 @@ export default function MealPlan({ navigation }) {
 
       {/* Sélection des repas */}
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('Breakfast', { addMeal })}
+        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
+        onPress={() => canAddMoreMeals && navigation.navigate('Breakfast', { addMeal })}
+        disabled={!canAddMoreMeals}
       >
         <Image
           source={{
@@ -52,8 +62,9 @@ export default function MealPlan({ navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('Lunch', { addMeal })}
+        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
+        onPress={() => canAddMoreMeals && navigation.navigate('Lunch', { addMeal })}
+        disabled={!canAddMoreMeals}
       >
         <Image
           source={{
@@ -65,8 +76,9 @@ export default function MealPlan({ navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('Dinner', { addMeal })}
+        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
+        onPress={() => canAddMoreMeals && navigation.navigate('Dinner', { addMeal })}
+        disabled={!canAddMoreMeals}
       >
         <Image
           source={{
@@ -78,8 +90,9 @@ export default function MealPlan({ navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('Snack', { addMeal })}
+        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
+        onPress={() => canAddMoreMeals && navigation.navigate('Snack', { addMeal })}
+        disabled={!canAddMoreMeals}
       >
         <Image
           source={{
@@ -111,11 +124,6 @@ export default function MealPlan({ navigation }) {
         <Text style={styles.totalCalories}>
           Total Calories: {totalCalories} kcal
         </Text>
-        {calorieMessage ? (
-          <Text style={styles.warning}>{calorieMessage}</Text>
-        ) : (
-          <Text style={styles.success}>Your meal plan looks great!</Text>
-        )}
       </View>
     </ScrollView>
   );
@@ -186,18 +194,6 @@ const styles = StyleSheet.create({
   totalCalories: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 10,
-  },
-  warning: {
-    fontSize: 16,
-    color: 'red',
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  success: {
-    fontSize: 16,
-    color: 'green',
-    fontWeight: 'bold',
     marginTop: 10,
   },
 });
