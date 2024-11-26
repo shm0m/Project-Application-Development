@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
+import { collection, addDoc } from 'firebase/firestore';
+import { firestore } from './firebase'
+
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -11,8 +14,6 @@ export default function FormScreen({ navigation }) {
   const [goal, setGoal] = useState(null);
   const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
-  const [dietaryRestrictions, setDietaryRestrictions] = useState([]);
-  const [favoriteCuisines, setFavoriteCuisines] = useState([]);
 
   const toggleSelection = (option, array, setArray) => {
     setArray((prev) =>
@@ -22,10 +23,10 @@ export default function FormScreen({ navigation }) {
 
   // Fonction pour calculer le BMI
   const calculateBMI = () => {
-    const heightInMeters = parseFloat(height) / 100; // Convertir en mètres
+    const heightInMeters = parseFloat(height) / 100; 
     const weightInKg = parseFloat(weight);
-    if (!heightInMeters || !weightInKg) return null; // Vérifier si les valeurs sont valides
-    return (weightInKg / (heightInMeters ** 2)).toFixed(2); // Formule BMI
+    if (!heightInMeters || !weightInKg) return null; 
+    return (weightInKg / (heightInMeters ** 2)).toFixed(2); 
   };
 
   // Fonction pour calculer le BMR
@@ -33,43 +34,51 @@ export default function FormScreen({ navigation }) {
     const weightInKg = parseFloat(weight);
     const heightInCm = parseFloat(height);
     const ageInYears = parseInt(age);
-    if (!weightInKg || !heightInCm || !ageInYears || !gender) return null; // Vérifier si les valeurs sont valides
+    if (!weightInKg || !heightInCm || !ageInYears || !gender) return null; 
 
     if (gender === 'Male') {
-      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears + 5).toFixed(2); // Formule pour homme
+      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears + 5).toFixed(2); 
     } else if (gender === 'Female') {
-      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears - 161).toFixed(2); // Formule pour femme
+      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears - 161).toFixed(2); 
     }
     return null;
   };
 
-  const handleSaveProfile = () => {
-    const bmi = calculateBMI();
-    const bmr = calculateBMR();
+    const handleSaveProfile = async () => {
+      const bmi = calculateBMI();
+      const bmr = calculateBMR();
 
-    if (!bmi || !bmr || !mail || !password) {
-      Alert.alert('Error', 'Please ensure all fields are filled correctly.');
-      return;
+      if (!bmi || !bmr || !mail || !password) {
+        Alert.alert('Error', 'Please ensure all fields are filled correctly.');
+        return;
+      }
+
+      const profileData = {
+        name,
+        age,
+        height,
+        weight,
+        gender,
+        goal,
+        mail,
+        password,
+        bmi,
+        bmr,
+        createdAt: new Date(),
+      };
+    
+      try {
+        
+        await addDoc(collection(firestore, "profiles"), profileData);
+        Alert.alert(
+          'Profile Saved',
+          `Your BMI is ${bmi} and your BMR is ${bmr}.`,
+          [{ text: 'OK', onPress: () => navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] })) }]
+        );
+      } catch (error) {
+      console.error("Error saving profile to Firestore: ", error);
+        Alert.alert('Error', 'Failed to save profile. Please try again.');
     }
-
-    const profileData = {
-      name,
-      age,
-      height,
-      weight,
-      gender,
-      goal,
-      mail,
-      password,
-      bmi,
-      bmr,
-    };
-
-    Alert.alert(
-      'Profile Saved',
-      `Your BMI is ${bmi} and your BMR is ${bmr}.`,
-      [{ text: 'OK', onPress: () => navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] })) }]
-    );
   };
 
   return (
