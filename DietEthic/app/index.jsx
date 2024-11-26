@@ -14,6 +14,8 @@ import Graph from '../components/Graph';
 import Breakfast from '../components/Breakfast';
 import Lunch from '../components/Lunch';
 import Dinner from '../components/Dinner';
+import Snack from '../components/Snack';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -37,6 +39,7 @@ function MealPlanStack() {
       <Stack.Screen name="Breakfast" component={Breakfast} />
       <Stack.Screen name="Lunch" component={Lunch} />
       <Stack.Screen name="Dinner" component={Dinner} />
+      <Stack.Screen name="Snack" component={Snack} />
     </Stack.Navigator>
   );
 }

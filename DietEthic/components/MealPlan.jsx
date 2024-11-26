@@ -83,7 +83,7 @@ export default function MealPlan({ navigation }) {
       >
         <Image
           source={{
-            uri: 'https://www.eatthis.com/wp-content/uploads/sites/4/2021/10/snacks-on-table.jpg',
+            uri: 'https://i.pinimg.com/736x/c6/fe/df/c6fedf742ba92dd5d7c090a730bba17e.jpg',
           }}
           style={styles.image}
         />
