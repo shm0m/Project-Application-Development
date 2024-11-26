@@ -8,18 +8,11 @@ export default function MealPlan({ navigation }) {
   const userCalorieNeeds = 1900;
 
   const addMeal = (meal, type) => {
-    setSelectedMeals((prev) => {
-      // Vérifie qu'un seul plat par type est sélectionné
-      if (prev.some((m) => m.type === type)) {
-        Alert.alert('Error', `You can only select one ${type}`);
-        return prev;
-      }
-      return [...prev, { ...meal, type }];
-    });
+    setSelectedMeals((prev) => [...prev, { ...meal, type }]);
   };
 
-  const removeMeal = (type) => {
-    setSelectedMeals((prev) => prev.filter((meal) => meal.type !== type));
+  const removeMeal = (mealIndex) => {
+    setSelectedMeals((prev) => prev.filter((_, index) => index !== mealIndex));
   };
 
   const groupedMeals = selectedMeals.reduce((acc, meal) => {
@@ -33,8 +26,8 @@ export default function MealPlan({ navigation }) {
 
   // Vérification des limites caloriques avec une marge de 100 kcal en dessous
   let calorieMessage = '';
-  if (totalCalories > userCalorieNeeds) {
-    calorieMessage = 'Sorry, you need to change your meal plan, too much calories.';
+  if (totalCalories > userCalorieNeeds+50) {
+    calorieMessage = 'Sorry, you need to change your meal plan, too many calories.';
   } else if (totalCalories < userCalorieNeeds - 100) {
     calorieMessage = 'Sorry, you need to add a meal, not enough calories.';
   }
@@ -44,6 +37,7 @@ export default function MealPlan({ navigation }) {
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>Plan Suggestions</Text>
 
+      {/* Sélection des repas */}
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('Breakfast', { addMeal })}
@@ -83,23 +77,35 @@ export default function MealPlan({ navigation }) {
         <Text style={styles.cardText}> Dinner </Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('Snack', { addMeal })}
+      >
+        <Image
+          source={{
+            uri: 'https://www.eatthis.com/wp-content/uploads/sites/4/2021/10/snacks-on-table.jpg',
+          }}
+          style={styles.image}
+        />
+        <Text style={styles.cardText}> Snack </Text>
+      </TouchableOpacity>
+
+      {/* Affichage des repas sélectionnés */}
       <View style={styles.bubble}>
         <Text style={styles.bubbleTitle}>Selected Meals</Text>
         {Object.keys(groupedMeals).map((type) => (
           <View key={type}>
-            <View style={styles.mealHeader}>
-              <Text style={styles.mealType}>{type}</Text>
-              <TouchableOpacity onPress={() => removeMeal(type)}>
-                <Text style={styles.removeButton}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-            {groupedMeals[type]
-              .sort((a, b) => a.calories - b.calories)
-              .map((meal, index) => (
-                <Text key={index} style={styles.mealItem}>
+            <Text style={styles.mealType}>{type}</Text>
+            {groupedMeals[type].map((meal, index) => (
+              <View key={index} style={styles.mealItemRow}>
+                <Text style={styles.mealItem}>
                   {meal.name} - {meal.calories} kcal
                 </Text>
-              ))}
+                <TouchableOpacity onPress={() => removeMeal(selectedMeals.indexOf(meal))}>
+                  <Text style={styles.removeButton}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
           </View>
         ))}
         <Text style={styles.totalCalories}>
@@ -158,19 +164,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  mealHeader: {
+  mealType: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  mealItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 5,
   },
-  mealType: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
   mealItem: {
     fontSize: 16,
-    marginVertical: 2,
   },
   removeButton: {
     fontSize: 14,
