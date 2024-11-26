@@ -3,7 +3,7 @@ import React from 'react';
 import { Text, SafeAreaView } from 'react-native';
 
 export default function ProfilScreen({ route }) {
-  const { name, gender, age, Goal, dietaryRestrictions, favoriteCuisines } = route.params || {};
+  const { name, gender, age, Goal, bmi, bmr } = route.params || {};
 
   return (
     <SafeAreaView>
@@ -12,8 +12,8 @@ export default function ProfilScreen({ route }) {
       {gender && <Text>Gender: {gender}</Text>}
       {age && <Text>Age: {age}</Text>}
       {Goal && <Text>Goal: {Goal}</Text>}
-      {dietaryRestrictions && <Text>Dietary Restrictions: {dietaryRestrictions.join(', ')}</Text>}
-      {favoriteCuisines && <Text>Favorite Cuisines: {favoriteCuisines.join(', ')}</Text>}
+      {bmi && <Text>bmi: {bmi}</Text>}
+      {bmr && <Text>bmr: {bmr}</Text>}
     </SafeAreaView>
   );
 }

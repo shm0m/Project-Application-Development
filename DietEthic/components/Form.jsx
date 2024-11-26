@@ -59,8 +59,6 @@ export default function FormScreen({ navigation }) {
       weight,
       gender,
       goal,
-      dietaryRestrictions,
-      favoriteCuisines,
       mail,
       password,
       bmi,

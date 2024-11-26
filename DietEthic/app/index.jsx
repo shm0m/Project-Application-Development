@@ -24,6 +24,7 @@ function TabNavigator() {
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       <Tab.Screen name="MealPlan" component={MealPlanStack} />
       <Tab.Screen name="Graph" component={Graph} />
+      <Tab.Screen name="Profil" component={ProfilScreen}/> 
     </Tab.Navigator>
   );
 }
