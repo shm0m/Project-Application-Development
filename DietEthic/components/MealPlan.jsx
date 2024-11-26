@@ -34,8 +34,6 @@ export default function MealPlan({ navigation }) {
   // Vérification des limites caloriques avec une marge de 100 kcal en dessous
   if (totalCalories > userCalorieNeeds + 50) {
     Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
-  } else if (totalCalories < userCalorieNeeds - 100) {
-    Alert.alert('Calorie Deficit', 'You need to add more meals to reach your calorie goal.');
   }
 
   // Vérifie si les repas peuvent être ajoutés
