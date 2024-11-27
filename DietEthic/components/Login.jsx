@@ -1,29 +1,47 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { CommonActions } from '@react-navigation/native';  // Ajoutez cette ligne
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../FirebaseConfig'; 
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    if (email && password) {
-      // Si l'email et le mot de passe sont valides, naviguer vers Main
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        })
-      );
-    } else {
-      alert('Please enter your email and password');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Erreur', 'Veuillez entrer votre email et votre mot de passe.');
+      return;
     }
-  };
+  
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+  
+      console.log('Connexion réussie pour l\'utilisateur :', user);
+  
+      Alert.alert('Succès', 'Connexion réussie !');
+      
+      // Redirection après connexion
+      navigation.navigate('Profil', {
+        uid: user.uid, // Envoie l'ID utilisateur comme paramètre
+        email: user.email, // Envoie l'email si nécessaire
+      });
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        Alert.alert('Erreur', "Aucun utilisateur trouvé avec cet email.");
+        
+      console.error('Erreur lors de la connexion :', error);
+      Alert.alert('Erreur', error.message);
+    }
+  }
 
+  };
+  
   const navigateToSignUp = () => {
-    // Navigation vers la page Form pour l'inscription
     navigation.navigate('Form');
   };
+
 
   return (
     <View style={styles.container}>

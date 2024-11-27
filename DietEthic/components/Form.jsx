@@ -1,28 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
-import { collection, addDoc } from 'firebase/firestore';
-import { firestore } from './firebase'
-
+import { auth } from '../FirebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { getDatabase, ref, set } from 'firebase/database';
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [gender, setGender] = useState(null);
-  const [goal, setGoal] = useState(null);
+  const [gender, setGender] = useState('');
+  const [goal, setGoal] = useState('');
   const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
 
-  const toggleSelection = (option, array, setArray) => {
-    setArray((prev) =>
-      prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]
-    );
-  };
-
-  // Fonction pour calculer le BMI
-  const calculateBMI = () => {
+   // Fonction pour calculer le BMI
+   const calculateBMI = () => {
     const heightInMeters = parseFloat(height) / 100; 
     const weightInKg = parseFloat(weight);
     if (!heightInMeters || !weightInKg) return null; 
@@ -44,40 +37,57 @@ export default function FormScreen({ navigation }) {
     return null;
   };
 
-    const handleSaveProfile = async () => {
-      const bmi = calculateBMI();
-      const bmr = calculateBMR();
+  // Fonction pour enregistrer les données utilisateur dans Firebase Realtime Database
+  const saveUserData = async (userId) => {
+    const db = getDatabase();
+    const bmi = calculateBMI(); // Calcul du BMI
+    const bmr = calculateBMR(); // Calcul du BMR
+    const userData = {
+      name,
+      mail,
+      password,
+      age,
+      height,
+      weight,
+      gender,
+      goal,
+      bmi,
+      bmr,
+    };
 
-      if (!bmi || !bmr || !mail || !password) {
-        Alert.alert('Error', 'Please ensure all fields are filled correctly.');
-        return;
+    try {
+      await set(ref(db, `users/${userId}`), userData);
+      Alert.alert('Succès', 'Compte créé et données enregistrées dans la base de données !');
+      
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement des données :", error);
+      Alert.alert('Erreur', "Impossible d'enregistrer les données utilisateur.");
+    }
+  };
+
+  // Fonction pour gérer l'inscription
+  const handleSaveProfile = async () => {
+    if (!mail || !password || !name || !age || !height || !weight || !gender || !goal) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, mail, password);
+      const userId = userCredential.user.uid;
+      await saveUserData(userId);
+    } catch (error) {
+      if (error.code === 'auth/email-already-in-use') {
+        Alert.alert('Erreur', "L'adresse email est déjà utilisée.");
+      } else if (error.code === 'auth/invalid-email') {
+        Alert.alert('Erreur', "L'adresse email est invalide.");
+      } else if (error.code === 'auth/weak-password') {
+        Alert.alert('Erreur', 'Le mot de passe est trop faible.');
+      } else {
+        Alert.alert('Erreur', "Une erreur est survenue. Veuillez réessayer.");
       }
-
-      const profileData = {
-        name,
-        age,
-        height,
-        weight,
-        gender,
-        goal,
-        mail,
-        password,
-        bmi,
-        bmr,
-        createdAt: new Date(),
-      };
-    
-      try {
-        
-        await addDoc(collection(firestore, "profiles"), profileData);
-        Alert.alert(
-          'Profile Saved',
-          `Your BMI is ${bmi} and your BMR is ${bmr}.`,
-          [{ text: 'OK', onPress: () => navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Main' }] })) }]
-        );
-      } catch (error) {
-      console.error("Error saving profile to Firestore: ", error);
-        Alert.alert('Error', 'Failed to save profile. Please try again.');
+      console.error("Erreur lors de l'inscription :", error);
     }
   };
 
