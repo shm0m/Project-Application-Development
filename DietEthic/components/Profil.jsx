@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, SafeAreaView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { Text,View, SafeAreaView, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
 import { getDatabase, ref, get } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
@@ -48,7 +48,7 @@ export default function Profil({ navigation }) {
   if (!userData) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>Aucune donnée utilisateur trouvée.</Text>
+        <Text style={styles.errorText}>User not found.</Text>
       </SafeAreaView>
     );
   }
@@ -56,14 +56,28 @@ export default function Profil({ navigation }) {
   const { name, gender, age, goal, bmi, bmr } = userData;
 
   return (
+    
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Profil Page</Text>
-      {name && <Text style={styles.text}>Welcome, {name}</Text>}
-      {gender && <Text style={styles.text}>Gender: {gender}</Text>}
-      {age && <Text style={styles.text}>Age: {age}</Text>}
-      {goal && <Text style={styles.text}>Goal: {goal}</Text>}
-      {bmi && <Text style={styles.text}>BMI: {bmi}</Text>}
-      {bmr && <Text style={styles.text}>BMR: {bmr}</Text>}
+    {/* Avatar */}
+    <View style={styles.avatarContainer}>
+      <Image
+        source={{
+          uri: 'https://i.pinimg.com/736x/b0/bb/09/b0bb09e2211bc66f9b6341dbcab1a136.jpg', // Remplace cette URL par celle d'un avatar réel
+        }}
+        style={styles.avatar}
+      />
+      <Text style={styles.name}>{name || 'First Name Last Name'}</Text>
+    </View>
+    <Text style={styles.title}>Profil Page</Text>
+        {name && <Text style={styles.text}>Welcome, {name}</Text>}
+        {gender && <Text style={styles.text}>Gender: {gender}</Text>}
+        {age && <Text style={styles.text}>Age: {age}</Text>}
+        {goal && <Text style={styles.text}>Goal: {goal}</Text>}
+        {bmi && <Text style={styles.text}>BMI: {bmi}</Text>}
+        {bmr && <Text style={styles.text}>BMR: {bmr}</Text>}
+
+    {/* Contact */}
+    <Text style={styles.contactText}>Contact us at: support@dietethic.fr</Text>
     </SafeAreaView>
   );
 }
@@ -71,21 +85,38 @@ export default function Profil({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#fff',
+    alignItems: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  avatarContainer: {
+    alignItems: 'center',
     marginBottom: 20,
   },
-  text: {
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#ddd',
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 10,
+    color: '#6c63ff', // Couleur similaire au design
+  },
+  detailsContainer: {
+    marginTop: 20,
+    width: '100%',
+  },
+  detailText: {
     fontSize: 18,
     marginBottom: 10,
+    color: '#333',
   },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
+  contactText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#6c63ff',
   },
 });
