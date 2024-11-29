@@ -4,6 +4,10 @@ import { LineChart } from 'react-native-chart-kit';
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { calculateGoalWeight } from './tools';
+import Quote from './Quote';
+import { Keyboard } from 'react-native';
+
+
 
 export default function Graph() {
   const [weightHistory, setWeightHistory] = useState([0]); // Historique des poids
@@ -47,6 +51,8 @@ export default function Graph() {
       alert('Veuillez entrer un poids valide.');
       return;
     }
+
+    Keyboard.dismiss();
 
     const user = auth.currentUser;
     if (user) {
@@ -132,6 +138,8 @@ export default function Graph() {
       ) : (
         <Text>Pas encore de données à afficher.</Text>
       )}
+      {/* Citation inspirante */}
+    <Quote />
     </View>
   );
 }
