@@ -8,6 +8,7 @@ import ProfilScreen from '../components/Profil';
 import HomePage from '../components/HomePage';
 import MealPlan from '../components/MealPlan';
 import Graph from '../components/Graph';
+import Accueil from '../components/Accueil'; 
 
 // Sous-écrans de MealPlan
 import Breakfast from '../components/Breakfast';
@@ -23,7 +24,8 @@ function TabNavigator() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
       {/* Renommer ce "MealPlan" pour éviter le conflit */}
-      <Tab.Screen name="MealPlanTab" component={MealPlanStack} />
+      <Tab.Screen name="Home Page" component={Accueil} />
+      <Tab.Screen name="MealPlan " component={MealPlanStack} />
       <Tab.Screen name="Graph" component={Graph} />
       <Tab.Screen name="Profil" component={ProfilScreen} /> 
     </Tab.Navigator>
