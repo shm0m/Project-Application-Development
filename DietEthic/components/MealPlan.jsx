@@ -1,16 +1,60 @@
-import React, { useState } from 'react';
-import { Text, StyleSheet, Image, ScrollView, TouchableOpacity, View, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, StyleSheet, Image, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
+import { getDatabase, ref, get } from 'firebase/database';
+import { auth } from '../FirebaseConfig';
 
 export default function MealPlan({ navigation }) {
   const [selectedMeals, setSelectedMeals] = useState([]);
+  const [userCalorieNeeds, setUserCalorieNeeds] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Simule le besoin calorique quotidien de l'utilisateur (à remplacer par des données dynamiques)
-  const userCalorieNeeds = 1900;
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+          Alert.alert('Erreur', 'Aucun utilisateur connecté.');
+          navigation.navigate('Login');
+          return;
+        }
+
+        const db = getDatabase();
+        const userRef = ref(db, `users/${userId}`);
+        const snapshot = await get(userRef);
+
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          calculateCalorieNeeds(userData);
+        } else {
+          Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur :', error);
+        Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
+        setUserCalorieNeeds(1900); // Valeur par défaut en cas d'erreur
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [navigation]);
+
+  const calculateCalorieNeeds = (data) => {
+    if (!data.bmi || !data.bmr) {
+      Alert.alert('Erreur', 'Données BMI ou BMR manquantes.');
+      setUserCalorieNeeds(1900); // Valeur par défaut
+      return;
+    }
+
+    const calorieNeeds = data.bmr * (data.bmi < 18.5 ? 1.2 : data.bmi < 25 ? 1.5 : 1.8); // Exemple : multiplier le BMR selon le BMI
+    setUserCalorieNeeds(Math.round(calorieNeeds));
+  };
 
   const addMeal = (meal, type) => {
     const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
-    if (totalCalories + meal.calories > userCalorieNeeds + 50) {
+    if (userCalorieNeeds && totalCalories + meal.calories > userCalorieNeeds + 50) {
       Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
       return;
     }
@@ -28,21 +72,33 @@ export default function MealPlan({ navigation }) {
     return acc;
   }, {});
 
-  // Calcul des calories totales
   const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
-  // Vérification des limites caloriques avec une marge de 100 kcal en dessous
-  if (totalCalories > userCalorieNeeds + 50) {
-    Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
+  const canAddMoreMeals = userCalorieNeeds && totalCalories <= userCalorieNeeds + 50;
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.title}>Loading calorie data...</Text>
+      </View>
+    );
   }
 
-  // Vérifie si les repas peuvent être ajoutés
-  const canAddMoreMeals = totalCalories <= userCalorieNeeds + 50;
+  if (userCalorieNeeds === null) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Unable to calculate calorie needs.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
-      <Text style={styles.subtitle}>Plan Suggestions</Text>
+      <Text style={styles.subtitle}>
+        Daily Calorie Limit: {userCalorieNeeds} kcal
+      </Text>
 
       {/* Sélection des repas */}
       <TouchableOpacity
