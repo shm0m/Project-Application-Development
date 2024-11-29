@@ -5,7 +5,7 @@ import { auth } from '../FirebaseConfig';
 
 export default function HomeScreen() {
   const [userData, setUserData] = useState(null);
-  const [dailyMeals, setDailyMeals] = useState([]);
+  const [consumedCalories, setConsumedCalories] = useState(0); // Pour stocker le totalCalories de MealPlan
   const [suggestedMeals, setSuggestedMeals] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +26,9 @@ export default function HomeScreen() {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
-          generateSuggestedMeals(data.mealPreference, data.bmr || 2000); // Utilise BMR pour limiter les calories
-          setHistory(data.mealHistory || []); // Assure un historique des repas
+          setConsumedCalories(data.totalCalories || 0); // Récupérer le total des calories consommées
+          setHistory(data.mealHistory || []); // Charger l'historique
+          generateSuggestedMeals(data.mealPreference, data.calorieNeeds || 2000); // Utiliser calorieNeeds pour suggérer des repas
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -43,7 +44,7 @@ export default function HomeScreen() {
   }, []);
 
   const generateSuggestedMeals = (mealPreferences, calorieLimit) => {
-    // Simule des suggestions en fonction des préférences
+    // Simule des suggestions de repas en fonction des préférences de l'utilisateur
     const allMeals = [
       { name: 'Oatmeal with Berries', calories: 300 },
       { name: 'Grilled Chicken Salad', calories: 400 },
@@ -67,6 +68,8 @@ export default function HomeScreen() {
     );
   }
 
+  const calorieNeeds = userData?.calorieNeeds || 2000; // Calorie Needs par défaut
+
   return (
     <ScrollView style={styles.container}>
       {/* Titre */}
@@ -78,21 +81,23 @@ export default function HomeScreen() {
       {/* Daily Summary */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Daily Summary</Text>
+
+        {/* Calories Goal */}
         <View style={styles.row}>
           <Text>Calories Goal</Text>
-          <Text>{userData?.bmr || 2000} kcal</Text>
+          <Text>{calorieNeeds} kcal</Text>
         </View>
+
+        {/* Consumed */}
         <View style={styles.row}>
           <Text>Consumed</Text>
-          <Text>{dailyMeals.reduce((sum, meal) => sum + meal.calories, 0)} kcal</Text>
+          <Text>{consumedCalories} kcal</Text>
         </View>
+
+        {/* Remaining */}
         <View style={styles.row}>
           <Text>Remaining</Text>
-          <Text>
-            {(userData?.bmr || 2000) -
-              dailyMeals.reduce((sum, meal) => sum + meal.calories, 0)}{' '}
-            kcal
-          </Text>
+          <Text>{calorieNeeds - consumedCalories} kcal</Text>
         </View>
       </View>
 

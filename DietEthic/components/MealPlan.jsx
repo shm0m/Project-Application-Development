@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, Image, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import { getDatabase, ref, get } from 'firebase/database';
+import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
 export default function MealPlan({ navigation }) {
@@ -24,14 +24,13 @@ export default function MealPlan({ navigation }) {
 
         if (snapshot.exists()) {
           const userData = snapshot.val();
-          calculateCalorieNeeds(userData);
+          calculateCalorieNeeds(userData, userId); // Appeler avec les données utilisateur et l'ID
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des données utilisateur :', error);
         Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
-        setUserCalorieNeeds(1900); // Valeur par défaut en cas d'erreur
       } finally {
         setLoading(false);
       }
@@ -40,15 +39,37 @@ export default function MealPlan({ navigation }) {
     fetchUserData();
   }, [navigation]);
 
-  const calculateCalorieNeeds = (data) => {
+  const calculateCalorieNeeds = async (data, userId) => {
     if (!data.bmi || !data.bmr) {
       Alert.alert('Erreur', 'Données BMI ou BMR manquantes.');
       setUserCalorieNeeds(1900); // Valeur par défaut
       return;
     }
 
-    const calorieNeeds = data.bmr * (data.bmi < 18.5 ? 1.2 : data.bmi < 25 ? 1.5 : 1.8); // Exemple : multiplier le BMR selon le BMI
-    setUserCalorieNeeds(Math.round(calorieNeeds));
+    // Calcul des besoins caloriques quotidiens
+    const calorieNeeds = Math.round(data.bmr * (data.bmi < 18.5 ? 1.2 : data.bmi < 25 ? 1.5 : 1.8));
+    setUserCalorieNeeds(calorieNeeds);
+
+    // Sauvegarde dans Firebase
+    try {
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userId}`);
+      await update(userRef, { calorieNeeds }); // Met à jour la base avec userCalorieNeeds
+      console.log('Calorie needs sauvegardé avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des besoins caloriques :', error);
+    }
+  };
+
+  const saveConsumedCaloriesToDatabase = async (userId, consumedCalories) => {
+    try {
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userId}`);
+      await update(userRef, { consumedCalories }); // Enregistre le total des calories consommées dans Firebase
+      console.log('Consumed calories sauvegardé avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des calories consommées :', error);
+    }
   };
 
   const addMeal = (meal, type) => {
@@ -66,6 +87,14 @@ export default function MealPlan({ navigation }) {
     setSelectedMeals((prev) => prev.filter((_, index) => index !== mealIndex));
   };
 
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
+    if (userId) {
+      saveConsumedCaloriesToDatabase(userId, totalCalories);
+    }
+  }, [selectedMeals]);
+
   const groupedMeals = selectedMeals.reduce((acc, meal) => {
     if (!acc[meal.type]) acc[meal.type] = [];
     acc[meal.type].push(meal);
@@ -74,21 +103,11 @@ export default function MealPlan({ navigation }) {
 
   const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
-  const canAddMoreMeals = userCalorieNeeds && totalCalories <= userCalorieNeeds + 50;
-
   if (loading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
         <Text style={styles.title}>Loading calorie data...</Text>
-      </View>
-    );
-  }
-
-  if (userCalorieNeeds === null) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Unable to calculate calorie needs.</Text>
       </View>
     );
   }
@@ -102,9 +121,8 @@ export default function MealPlan({ navigation }) {
 
       {/* Sélection des repas */}
       <TouchableOpacity
-        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
-        onPress={() => canAddMoreMeals && navigation.navigate('Breakfast', { addMeal })}
-        disabled={!canAddMoreMeals}
+        style={styles.card}
+        onPress={() => navigation.navigate('Breakfast', { addMeal })}
       >
         <Image
           source={{
@@ -112,13 +130,12 @@ export default function MealPlan({ navigation }) {
           }}
           style={styles.image}
         />
-        <Text style={styles.cardText}> Breakfast </Text>
+        <Text style={styles.cardText}>Breakfast</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
-        onPress={() => canAddMoreMeals && navigation.navigate('Lunch', { addMeal })}
-        disabled={!canAddMoreMeals}
+        style={styles.card}
+        onPress={() => navigation.navigate('Lunch', { addMeal })}
       >
         <Image
           source={{
@@ -126,13 +143,12 @@ export default function MealPlan({ navigation }) {
           }}
           style={styles.image}
         />
-        <Text style={styles.cardText}> Lunch</Text>
+        <Text style={styles.cardText}>Lunch</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
-        onPress={() => canAddMoreMeals && navigation.navigate('Dinner', { addMeal })}
-        disabled={!canAddMoreMeals}
+        style={styles.card}
+        onPress={() => navigation.navigate('Dinner', { addMeal })}
       >
         <Image
           source={{
@@ -140,13 +156,12 @@ export default function MealPlan({ navigation }) {
           }}
           style={styles.image}
         />
-        <Text style={styles.cardText}> Dinner </Text>
+        <Text style={styles.cardText}>Dinner</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.card, !canAddMoreMeals && { opacity: 0.5 }]}
-        onPress={() => canAddMoreMeals && navigation.navigate('Snack', { addMeal })}
-        disabled={!canAddMoreMeals}
+        style={styles.card}
+        onPress={() => navigation.navigate('Snack', { addMeal })}
       >
         <Image
           source={{
@@ -154,7 +169,7 @@ export default function MealPlan({ navigation }) {
           }}
           style={styles.image}
         />
-        <Text style={styles.cardText}> Snack </Text>
+        <Text style={styles.cardText}>Snack</Text>
       </TouchableOpacity>
 
       {/* Affichage des repas sélectionnés */}
@@ -168,7 +183,7 @@ export default function MealPlan({ navigation }) {
                 <Text style={styles.mealItem}>
                   {meal.name} - {meal.calories} kcal
                 </Text>
-                <TouchableOpacity onPress={() => removeMeal(selectedMeals.indexOf(meal))}>
+                <TouchableOpacity onPress={() => removeMeal(index)}>
                   <Text style={styles.removeButton}>Remove</Text>
                 </TouchableOpacity>
               </View>
