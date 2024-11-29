@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, SafeAreaView, StyleSheet, ActivityIndicator, Alert, Image, TouchableOpacity } from 'react-native';
+import {
+  Text,
+  View,
+  SafeAreaView,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
+import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
 
 export default function Profil({ navigation }) {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileImage, setProfileImage] = useState(
+    'https://i.pinimg.com/736x/b0/bb/09/b0bb09e2211bc66f9b6341dbcab1a136.jpg' // URL par défaut
+  );
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -26,6 +39,11 @@ export default function Profil({ navigation }) {
           const updatedData = calculateBMIandBMR(data); // Calcul du BMI et BMR
           setUserData(updatedData);
           saveBMIandBMR(userId, updatedData.bmi, updatedData.bmr); // Enregistrement dans Firebase
+
+          // Charger l'image de profil de Firebase (si existante)
+          if (data.profileImage) {
+            setProfileImage(data.profileImage);
+          }
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -48,7 +66,6 @@ export default function Profil({ navigation }) {
     const heightInMeters = data.height / 100; // Convertir la taille en mètres
     const bmi = (data.weight / (heightInMeters * heightInMeters)).toFixed(1); // BMI arrondi à 1 décimale
 
-    // Calcul du BMR selon le genre
     const bmr =
       data.gender === 'Male'
         ? 88.362 + 13.397 * data.weight + 4.799 * data.height - 5.677 * data.age
@@ -65,6 +82,38 @@ export default function Profil({ navigation }) {
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des données :', error);
       Alert.alert('Erreur', "Impossible de sauvegarder les données utilisateur.");
+    }
+  };
+
+  const pickImage = async () => {
+    // Demander la permission
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission refusée', 'Vous devez autoriser l’accès à vos photos.');
+      return;
+    }
+
+    // Ouvrir la galerie
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1], // Carré
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const selectedImage = result.assets[0].uri;
+
+      // Mettre à jour l'image localement
+      setProfileImage(selectedImage);
+
+      // Sauvegarder dans Firebase
+      const userId = auth.currentUser?.uid;
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userId}`);
+      await update(userRef, { profileImage: selectedImage });
+
+      Alert.alert('Succès', 'Votre photo de profil a été mise à jour.');
     }
   };
 
@@ -90,12 +139,9 @@ export default function Profil({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Avatar Section */}
       <View style={styles.avatarContainer}>
-        <Image
-          source={{
-            uri: 'https://i.pinimg.com/736x/b0/bb/09/b0bb09e2211bc66f9b6341dbcab1a136.jpg',
-          }}
-          style={styles.avatar}
-        />
+        <TouchableOpacity onPress={pickImage}>
+          <Image source={{ uri: profileImage }} style={styles.avatar} />
+        </TouchableOpacity>
         <Text style={styles.name}>{name}</Text>
       </View>
 
@@ -108,20 +154,6 @@ export default function Profil({ navigation }) {
         {bmr && <Text style={styles.detailText}>BMR: {bmr}</Text>}
       </View>
 
-      {/* Navigation Buttons */}
-      <TouchableOpacity
-        style={styles.navButton}
-        onPress={() => navigation.navigate('Main', { screen: 'MealPlan', params: { bmi, bmr } })}>
-        <Text style={styles.navButtonText}>Go to Meal Plan</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.navButton}
-        onPress={() => navigation.navigate('Main', { screen: 'Graph' })}>
-        <Text style={styles.navButtonText}>Go to Graph</Text>
-      </TouchableOpacity>
-
-      {/* Contact Section */}
       <Text style={styles.contactText}>Contact us at: support@dietethic.fr</Text>
     </SafeAreaView>
   );
@@ -159,19 +191,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#4b4b4b',
     lineHeight: 25,
-  },
-  navButton: {
-    backgroundColor: '#6c63ff',
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 10,
-    width: '80%',
-    alignItems: 'center',
-  },
-  navButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   contactText: {
     marginTop: 30,
