@@ -9,23 +9,24 @@ import HomePage from '../components/HomePage';
 import MealPlan from '../components/MealPlan';
 import Graph from '../components/Graph';
 
-// Modifier ces importations
 import Breakfast from '../components/Breakfast';
 import Lunch from '../components/Lunch';
 import Dinner from '../components/Dinner';
 import Snack from '../components/Snack';
 
-
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Création du composant TabNavigator séparé
+// Création du composant TabNavigator
 function TabNavigator() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      initialRouteName="Profil" // Définit "Profil" comme l'onglet actif par défaut
+      screenOptions={{ headerShown: false }}
+    >
       <Tab.Screen name="MealPlan" component={MealPlanStack} />
       <Tab.Screen name="Graph" component={Graph} />
-      <Tab.Screen name="Profil" component={ProfilScreen}/> 
+      <Tab.Screen name="Profil" component={ProfilScreen} />
     </Tab.Navigator>
   );
 }
@@ -48,7 +49,6 @@ export default function Index() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomePage} />
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Profil" component={ProfilScreen} />
       <Stack.Screen name="Form" component={FormScreen} />
       <Stack.Screen name="Main" component={TabNavigator} />
     </Stack.Navigator>
