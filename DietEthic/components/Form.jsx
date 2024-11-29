@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert 
 import { auth } from '../FirebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, ref, set } from 'firebase/database';
+import { calculateGoalWeight } from './tools'
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -40,31 +41,35 @@ export default function FormScreen({ navigation }) {
   // Fonction pour enregistrer les données utilisateur dans Firebase Realtime Database
   const saveUserData = async (userId) => {
     const db = getDatabase();
-    const bmi = calculateBMI(); // Calcul du BMI
-    const bmr = calculateBMR(); // Calcul du BMR
+  
+    // Calculs des valeurs
+    const bmi = calculateBMI();
+    const goalWeight = calculateGoalWeight();
+  
     const userData = {
       name,
       mail,
       password,
       age,
       height,
-      weight,
+      weight, // Poids initial
       gender,
-      goal,
+      goal: goalWeight,
       bmi,
-      bmr,
+      weightHistory: [parseFloat(weight)], // Initialiser l'historique avec le poids initial
+      dates: [new Date().toLocaleDateString('fr-FR')], // Ajouter la date actuelle
     };
-
+  
     try {
+      // Sauvegarder dans Firebase
       await set(ref(db, `users/${userId}`), userData);
       Alert.alert('Succès', 'Compte créé et données enregistrées dans la base de données !');
-      
       navigation.navigate('Login');
     } catch (error) {
       console.error("Erreur lors de l'enregistrement des données :", error);
       Alert.alert('Erreur', "Impossible d'enregistrer les données utilisateur.");
     }
-  };
+  };  
 
   // Fonction pour gérer l'inscription
   const handleSaveProfile = async () => {
