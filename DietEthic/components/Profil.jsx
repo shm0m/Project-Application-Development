@@ -133,7 +133,7 @@ export default function Profil({ navigation }) {
     );
   }
 
-  const { name, gender, age, goal, bmi, bmr } = userData;
+  const { name, gender, age, goal, bmi, bmr, mealPreference } = userData; // Ajout de mealPreference
 
   return (
     <SafeAreaView style={styles.container}>
@@ -152,6 +152,11 @@ export default function Profil({ navigation }) {
         {goal && <Text style={styles.detailText}>Weight Goals: {goal}</Text>}
         {bmi && <Text style={styles.detailText}>BMI: {bmi}</Text>}
         {bmr && <Text style={styles.detailText}>BMR: {bmr}</Text>}
+        {mealPreference && mealPreference.length > 0 && (
+          <Text style={styles.detailText}>
+            Meal Preferences: {mealPreference.join(', ')}
+          </Text>
+        )}
       </View>
 
       <Text style={styles.contactText}>Contact us at: support@dietethic.fr</Text>
@@ -196,5 +201,9 @@ const styles = StyleSheet.create({
     marginTop: 30,
     fontSize: 16,
     color: '#6c63ff',
+  },
+  errorText: {
+    fontSize: 18,
+    color: 'red',
   },
 });

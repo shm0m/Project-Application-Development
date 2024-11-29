@@ -12,18 +12,17 @@ export default function FormScreen({ navigation }) {
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState('');
   const [goal, setGoal] = useState('');
+  const [mealPreference, setMealPreference] = useState(''); // Nouvelle state
   const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
 
-   // Fonction pour calculer le BMI
-   const calculateBMI = () => {
+  const calculateBMI = () => {
     const heightInMeters = parseFloat(height) / 100; 
     const weightInKg = parseFloat(weight);
     if (!heightInMeters || !weightInKg) return null; 
     return (weightInKg / (heightInMeters ** 2)).toFixed(2); 
   };
 
-  // Fonction pour calculer le BMR
   const calculateBMR = () => {
     const weightInKg = parseFloat(weight);
     const heightInCm = parseFloat(height);
@@ -38,11 +37,9 @@ export default function FormScreen({ navigation }) {
     return null;
   };
 
-  // Fonction pour enregistrer les données utilisateur dans Firebase Realtime Database
   const saveUserData = async (userId) => {
     const db = getDatabase();
   
-    // Calculs des valeurs
     const bmi = calculateBMI();
     const goalWeight = calculateGoalWeight();
   
@@ -52,16 +49,16 @@ export default function FormScreen({ navigation }) {
       password,
       age,
       height,
-      weight, // Poids initial
+      weight,
       gender,
       goal: goalWeight,
       bmi,
-      weightHistory: [parseFloat(weight)], // Initialiser l'historique avec le poids initial
-      dates: [new Date().toLocaleDateString('fr-FR')], // Ajouter la date actuelle
+      weightHistory: [parseFloat(weight)],
+      dates: [new Date().toLocaleDateString('fr-FR')],
+      mealPreference, // Nouvelle propriété ajoutée
     };
   
     try {
-      // Sauvegarder dans Firebase
       await set(ref(db, `users/${userId}`), userData);
       Alert.alert('Succès', 'Compte créé et données enregistrées dans la base de données !');
       navigation.navigate('Login');
@@ -71,9 +68,8 @@ export default function FormScreen({ navigation }) {
     }
   };  
 
-  // Fonction pour gérer l'inscription
   const handleSaveProfile = async () => {
-    if (!mail || !password || !name || !age || !height || !weight || !gender || !goal) {
+    if (!mail || !password || !name || !age || !height || !weight || !gender || !goal || !mealPreference) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
       return;
     }
@@ -100,15 +96,12 @@ export default function FormScreen({ navigation }) {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Personal Informations</Text>
 
-      {/* Name Field */}
       <TextInput
         style={styles.input}
         placeholder="Name"
         value={name}
         onChangeText={setName}
       />
-
-      {/* Email Field */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -117,8 +110,6 @@ export default function FormScreen({ navigation }) {
         keyboardType="email-address"
         autoCapitalize="none"
       />
-
-      {/* Password Field */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -126,8 +117,6 @@ export default function FormScreen({ navigation }) {
         onChangeText={setPassword}
         secureTextEntry
       />
-
-      {/* Age Field */}
       <TextInput
         style={styles.input}
         placeholder="Age"
@@ -135,8 +124,6 @@ export default function FormScreen({ navigation }) {
         onChangeText={setAge}
         keyboardType="numeric"
       />
-
-      {/* Height Field */}
       <TextInput
         style={styles.input}
         placeholder="Height (cm)"
@@ -144,8 +131,6 @@ export default function FormScreen({ navigation }) {
         onChangeText={setHeight}
         keyboardType="numeric"
       />
-
-      {/* Weight Field */}
       <TextInput
         style={styles.input}
         placeholder="Weight (kg)"
@@ -154,7 +139,6 @@ export default function FormScreen({ navigation }) {
         keyboardType="numeric"
       />
 
-      {/* Gender Selection */}
       <Text style={styles.label}>Gender</Text>
       <View style={styles.buttonGroup}>
         {["Male", "Female", "Other"].map((option) => (
@@ -168,7 +152,6 @@ export default function FormScreen({ navigation }) {
         ))}
       </View>
 
-      {/* Weight Goals */}
       <Text style={styles.label}>Weight Goals</Text>
       <View style={styles.buttonGroup}>
         {["Lose Weight", "Gain Weight"].map((option) => (
@@ -181,7 +164,27 @@ export default function FormScreen({ navigation }) {
           </TouchableOpacity>
         ))}
       </View>
-
+      <Text style={styles.label}>Meal Preference</Text>
+        <View style={styles.buttonGroup}>
+          {["Breakfast", "Lunch", "Dinner", "Snack"].map((option) => {
+            const isSelected = mealPreference.includes(option);
+            return (
+              <TouchableOpacity
+                key={option}
+                style={[styles.button, isSelected && styles.buttonSelected]}
+                onPress={() => {
+                  setMealPreference((prev) =>
+                    isSelected
+                      ? prev.filter((pref) => pref !== option) // Désélectionner
+                      : [...prev, option] // Ajouter la préférence
+                  );
+                }}
+              >
+                <Text style={styles.buttonText}>{option}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
         <Text style={styles.saveButtonText}>Save Profile</Text>
       </TouchableOpacity>
