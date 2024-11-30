@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { auth } from '../FirebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { getDatabase, ref, set } from 'firebase/database';
-import { calculateGoalWeight } from './tools'
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { auth } from "../FirebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { getDatabase, ref, set } from "firebase/database";
+import { calculateGoalWeight } from "./tools";
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -11,38 +19,22 @@ export default function FormScreen({ navigation }) {
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState('');
-  const [goal, setGoal] = useState('');
-  const [mealPreference, setMealPreference] = useState(''); // Nouvelle state
+  const [goal, setGoal] = useState(''); // Calculé automatiquement
+  const [mealPreference, setMealPreference] = useState([]);
   const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
 
   const calculateBMI = () => {
-    const heightInMeters = parseFloat(height) / 100; 
+    const heightInMeters = parseFloat(height) / 100;
     const weightInKg = parseFloat(weight);
-    if (!heightInMeters || !weightInKg) return null; 
-    return (weightInKg / (heightInMeters ** 2)).toFixed(2); 
-  };
-
-  const calculateBMR = () => {
-    const weightInKg = parseFloat(weight);
-    const heightInCm = parseFloat(height);
-    const ageInYears = parseInt(age);
-    if (!weightInKg || !heightInCm || !ageInYears || !gender) return null; 
-
-    if (gender === 'Male') {
-      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears + 5).toFixed(2); 
-    } else if (gender === 'Female') {
-      return (10 * weightInKg + 6.25 * heightInCm - 5 * ageInYears - 161).toFixed(2); 
-    }
-    return null;
+    if (!heightInMeters || !weightInKg) return null;
+    return (weightInKg / (heightInMeters ** 2)).toFixed(2);
   };
 
   const saveUserData = async (userId) => {
     const db = getDatabase();
-  
     const bmi = calculateBMI();
-    const goalWeight = calculateGoalWeight();
-  
+
     const userData = {
       name,
       mail,
@@ -51,13 +43,13 @@ export default function FormScreen({ navigation }) {
       height,
       weight,
       gender,
-      goal: goalWeight,
+      goal, // Utilisez `goal` calculé auparavant
       bmi,
       weightHistory: [parseFloat(weight)],
       dates: [new Date().toLocaleDateString('fr-FR')],
-      mealPreference, // Nouvelle propriété ajoutée
+      mealPreference,
     };
-  
+
     try {
       await set(ref(db, `users/${userId}`), userData);
       Alert.alert('Succès', 'Compte créé et données enregistrées dans la base de données !');
@@ -66,10 +58,25 @@ export default function FormScreen({ navigation }) {
       console.error("Erreur lors de l'enregistrement des données :", error);
       Alert.alert('Erreur', "Impossible d'enregistrer les données utilisateur.");
     }
-  };  
+  };
 
   const handleSaveProfile = async () => {
-    if (!mail || !password || !name || !age || !height || !weight || !gender || !goal || !mealPreference) {
+    // Calculer le poids cible
+    const calculatedGoal = calculateGoalWeight(height);
+    setGoal(calculatedGoal);
+
+    console.log("Form data:");
+    console.log("Mail:", mail);
+    console.log("Password:", password);
+    console.log("Name:", name);
+    console.log("Age:", age);
+    console.log("Height:", height);
+    console.log("Weight:", weight);
+    console.log("Gender:", gender);
+    console.log("Goal:", calculatedGoal); // Vérifier le calcul
+    console.log("MealPreference:", mealPreference);
+
+    if (!mail || !password || !name || !age || !height || !weight || !gender || !calculatedGoal || mealPreference.length === 0) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
       return;
     }
@@ -79,16 +86,8 @@ export default function FormScreen({ navigation }) {
       const userId = userCredential.user.uid;
       await saveUserData(userId);
     } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        Alert.alert('Erreur', "L'adresse email est déjà utilisée.");
-      } else if (error.code === 'auth/invalid-email') {
-        Alert.alert('Erreur', "L'adresse email est invalide.");
-      } else if (error.code === 'auth/weak-password') {
-        Alert.alert('Erreur', 'Le mot de passe est trop faible.');
-      } else {
-        Alert.alert('Erreur', "Une erreur est survenue. Veuillez réessayer.");
-      }
       console.error("Erreur lors de l'inscription :", error);
+      Alert.alert('Erreur', "Impossible de créer le compte.");
     }
   };
 
@@ -151,40 +150,27 @@ export default function FormScreen({ navigation }) {
           </TouchableOpacity>
         ))}
       </View>
-
-      <Text style={styles.label}>Weight Goals</Text>
-      <View style={styles.buttonGroup}>
-        {["Lose Weight", "Gain Weight"].map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[styles.button, goal === option && styles.buttonSelected]}
-            onPress={() => setGoal(option)}
-          >
-            <Text style={styles.buttonText}>{option}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
       <Text style={styles.label}>Meal Preference</Text>
-        <View style={styles.buttonGroup}>
-          {["Breakfast", "Lunch", "Dinner", "Snack"].map((option) => {
-            const isSelected = mealPreference.includes(option);
-            return (
-              <TouchableOpacity
-                key={option}
-                style={[styles.button, isSelected && styles.buttonSelected]}
-                onPress={() => {
-                  setMealPreference((prev) =>
-                    isSelected
-                      ? prev.filter((pref) => pref !== option) // Désélectionner
-                      : [...prev, option] // Ajouter la préférence
-                  );
-                }}
-              >
-                <Text style={styles.buttonText}>{option}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+      <View style={styles.buttonGroup}>
+        {["Breakfast", "Lunch", "Dinner", "Snack"].map((option) => {
+          const isSelected = mealPreference.includes(option);
+          return (
+            <TouchableOpacity
+              key={option}
+              style={[styles.button, isSelected && styles.buttonSelected]}
+              onPress={() => {
+                setMealPreference((prev) =>
+                  isSelected
+                    ? prev.filter((pref) => pref !== option)
+                    : [...prev, option]
+                );
+              }}
+            >
+              <Text style={styles.buttonText}>{option}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
         <Text style={styles.saveButtonText}>Save Profile</Text>
       </TouchableOpacity>
@@ -192,45 +178,46 @@ export default function FormScreen({ navigation }) {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#F2F2F2',
+    backgroundColor: "#F2F2F2",
   },
 
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6A4FD8',
+    fontWeight: "bold",
+    color: "#6A4FD8",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   input: {
-    backgroundColor: '#E5E0FF',
+    backgroundColor: "#E5E0FF",
     borderRadius: 25,
     padding: 10,
     marginBottom: 15,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     paddingHorizontal: 20,
   },
 
   label: {
     fontSize: 16,
     marginVertical: 10,
-    fontWeight: 'bold',
-    color: '#6A4FD8',
+    fontWeight: "bold",
+    color: "#6A4FD8",
   },
 
   buttonGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 15,
   },
 
   button: {
-    backgroundColor: '#E5E0FF',
+    backgroundColor: "#E5E0FF",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 25,
@@ -238,30 +225,30 @@ const styles = StyleSheet.create({
   },
 
   buttonSelected: {
-    backgroundColor: '#6A4FD8',
+    backgroundColor: "#6A4FD8",
   },
 
   buttonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
+    color: "#FFF",
+    fontWeight: "bold",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 15,
-    color: '#6A4FD8',
-    textAlign: 'center',
+    color: "#6A4FD8",
+    textAlign: "center",
   },
   saveButton: {
-    backgroundColor: '#6A4FD8',
+    backgroundColor: "#6A4FD8",
     padding: 15,
     borderRadius: 25,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
   },
   saveButtonText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

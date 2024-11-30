@@ -7,18 +7,15 @@ import { calculateGoalWeight } from './tools';
 import Quote from './Quote';
 import { Keyboard } from 'react-native';
 
-
-
 export default function Graph() {
-  const [weightHistory, setWeightHistory] = useState([0]); // Historique des poids
-  const [dates, setDates] = useState(['']); // Dates correspondantes
-  const [goal, setGoal] = useState(0); // Objectif de poids
-  const [newWeight, setNewWeight] = useState(''); // Poids saisi par l'utilisateur
+  const [weightHistory, setWeightHistory] = useState([0]);
+  const [dates, setDates] = useState(['']);
+  const [goal, setGoal] = useState(0);
+  const [newWeight, setNewWeight] = useState('');
 
   const auth = getAuth();
   const db = getDatabase();
 
-  // Charger les données utilisateur depuis Firebase
   useEffect(() => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
@@ -45,10 +42,9 @@ export default function Graph() {
     fetchUserData();
   }, []);
 
-  // Ajouter un nouveau poids
   const addWeight = async () => {
     if (!newWeight || isNaN(newWeight)) {
-      alert('Veuillez entrer un poids valide.');
+      alert('Enter a valid weight');
       return;
     }
 
@@ -56,16 +52,14 @@ export default function Graph() {
 
     const user = auth.currentUser;
     if (user) {
-      const today = new Date().toLocaleDateString('fr-FR'); // Date actuelle
+      const today = new Date().toLocaleDateString('en-UK'); 
       const updatedHistory = [...weightHistory, parseFloat(newWeight)];
       const updatedDates = [...dates, today];
-
-      // Mettre à jour l’état local
+      
       setWeightHistory(updatedHistory);
       setDates(updatedDates);
-      setNewWeight(''); // Réinitialiser le champ
+      setNewWeight('');
 
-      // Mettre à jour Firebase
       try {
         await update(ref(db, `users/${user.uid}`), {
           weightHistory: updatedHistory,
@@ -78,15 +72,14 @@ export default function Graph() {
     }
   };
 
-  // Nettoyage des données pour le graphique
   const sanitizedWeightHistory = weightHistory.filter((value) => !isNaN(value) && value !== null && value !== undefined);
   const sanitizedGoal = !isNaN(goal) && goal !== null && goal !== undefined ? goal : 0;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Votre progression de poids</Text>
+      <Text style={styles.text}>Your weight progression</Text>
 
-      {/* Input pour entrer un nouveau poids */}
+      {/* weight input*/}
       <TextInput
         style={styles.input}
         placeholder="Entrez votre poids (kg)"

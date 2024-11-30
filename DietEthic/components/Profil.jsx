@@ -1,32 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
+  ScrollView,
   Text,
   View,
-  SafeAreaView,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Alert,
   Image,
-  TouchableOpacity,
-} from 'react-native';
-import { getDatabase, ref, get, update } from 'firebase/database';
-import { auth } from '../FirebaseConfig';
-import * as ImagePicker from 'expo-image-picker'; // Import ImagePicker
+} from "react-native";
+import { getDatabase, ref, get, update } from "firebase/database";
+import { auth } from "../FirebaseConfig";
+import { signOut } from "firebase/auth";
+import * as ImagePicker from "expo-image-picker";
 
-export default function Profil({ navigation }) {
-  const [userData, setUserData] = useState(null);
+export default function ProfileScreen({ navigation }) {
+  const [userData, setUserData] = useState({weightHistory: [],});
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState(
-    'https://i.pinimg.com/736x/b0/bb/09/b0bb09e2211bc66f9b6341dbcab1a136.jpg' // URL par défaut
+    "https://i.pinimg.com/736x/b0/bb/09/b0bb09e2211bc66f9b6341dbcab1a136.jpg"
   );
+
+  const [name, setName] = useState("");
+  const [mail, setMail] = useState("");
+  const [password, setPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [height, setHeight] = useState("");
+  const [gender, setGender] = useState("");
+  const [goal, setGoal] = useState("");
+  const [mealPreference, setMealPreference] = useState([]);
+  const lastWeight =
+    userData.weightHistory?.[userData.weightHistory.length - 1] || "No data";
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const userId = auth.currentUser?.uid;
         if (!userId) {
-          Alert.alert('Erreur', 'Aucun utilisateur connecté.');
-          navigation.navigate('Login');
+          Alert.alert("Erreur", "Aucun utilisateur connecté.");
+          navigation.navigate("Login");
           return;
         }
 
@@ -36,20 +50,26 @@ export default function Profil({ navigation }) {
 
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const updatedData = calculateBMIandBMR(data); // Calcul du BMI et BMR
-          setUserData(updatedData);
-          saveBMIandBMR(userId, updatedData.bmi, updatedData.bmr); // Enregistrement dans Firebase
+          setUserData(data);
 
-          // Charger l'image de profil de Firebase (si existante)
-          if (data.profileImage) {
-            setProfileImage(data.profileImage);
-          }
+          setName(data.name || "");
+          setMail(data.mail || "");
+          setPassword(data.password || "");
+          setAge(data.age?.toString() || "");
+          setHeight(data.height?.toString() || "");
+          setGender(data.gender || "");
+          setGoal(data.goal || "");
+          setMealPreference(data.mealPreference || []);
+          setProfileImage(data.profileImage || profileImage);
         } else {
-          Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
+          Alert.alert("Erreur", "Aucune donnée utilisateur trouvée.");
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération des données utilisateur :', error);
-        Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
+        console.error("Erreur lors de la récupération des données :", error);
+        Alert.alert(
+          "Erreur",
+          "Impossible de récupérer les données utilisateur."
+        );
       } finally {
         setLoading(false);
       }
@@ -58,152 +78,249 @@ export default function Profil({ navigation }) {
     fetchUserData();
   }, [navigation]);
 
-  const calculateBMIandBMR = (data) => {
-    if (!data.weight || !data.height || !data.age || !data.gender) {
-      return { ...data, bmi: null, bmr: null };
-    }
-
-    const heightInMeters = data.height / 100; // Convertir la taille en mètres
-    const bmi = (data.weight / (heightInMeters * heightInMeters)).toFixed(1); // BMI arrondi à 1 décimale
-
-    const bmr =
-      data.gender === 'Male'
-        ? 88.362 + 13.397 * data.weight + 4.799 * data.height - 5.677 * data.age
-        : 447.593 + 9.247 * data.weight + 3.098 * data.height - 4.330 * data.age;
-
-    return { ...data, bmi: parseFloat(bmi), bmr: Math.round(bmr) };
-  };
-
-  const saveBMIandBMR = async (userId, bmi, bmr) => {
+  const handleSaveProfile = async () => {
     try {
+      const userId = auth.currentUser?.uid;
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
-      await update(userRef, { bmi, bmr }); // Mise à jour de la base de données avec le BMI et BMR
+
+      const updatedData = {
+        name,
+        mail,
+        password,
+        age: parseInt(age, 10),
+        height: parseFloat(height),
+        gender,
+        goal,
+        mealPreference,
+        profileImage,
+      };
+
+      await update(userRef, updatedData);
+
+      setUserData({ ...userData, ...updatedData });
+      setIsEditing(false);
+      Alert.alert("Success", "Profile picture is set up !");
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des données :', error);
-      Alert.alert('Erreur', "Impossible de sauvegarder les données utilisateur.");
+      console.error("Error while updating:", error);
     }
   };
 
   const pickImage = async () => {
-    // Demander la permission
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert('Permission refusée', 'Vous devez autoriser l’accès à vos photos.');
+      Alert.alert(
+        "Access denied",
+        "Please enable access photo permissions in your settings"
+      );
       return;
     }
 
-    // Ouvrir la galerie
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], // Carré
+      aspect: [1, 1],
       quality: 1,
     });
 
     if (!result.canceled) {
       const selectedImage = result.assets[0].uri;
-
-      // Mettre à jour l'image localement
       setProfileImage(selectedImage);
-
-      // Sauvegarder dans Firebase
       const userId = auth.currentUser?.uid;
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
       await update(userRef, { profileImage: selectedImage });
+    }
+  };
 
-      Alert.alert('Succès', 'Votre photo de profil a été mise à jour.');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      Alert.alert("You are now disconnected");
+      navigation.navigate("Login");
+    } catch (error) {
+      console.error("Error while disconnecting :", error);
+      Alert.alert("Error", "It's not you it's us");
     }
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </SafeAreaView>
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#6A4FD8" />
+      </View>
     );
   }
 
   if (!userData) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>User not found.</Text>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <Text>Utilisateur non trouvé.</Text>
+      </View>
     );
   }
 
-  const { name, gender, age, goal, bmi, bmr, mealPreference } = userData; // Ajout de mealPreference
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Avatar Section */}
-      <View style={styles.avatarContainer}>
-        <TouchableOpacity onPress={pickImage}>
-          <Image source={{ uri: profileImage }} style={styles.avatar} />
-        </TouchableOpacity>
-        <Text style={styles.name}>{name}</Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity onPress={pickImage}>
+        <Image source={{ uri: profileImage }} style={styles.avatar} />
+      </TouchableOpacity>
 
-      {/* Details Section */}
-      <View style={styles.detailsContainer}>
-        {gender && <Text style={styles.detailText}>Gender: {gender}</Text>}
-        {age && <Text style={styles.detailText}>Age: {age}</Text>}
-        {goal && <Text style={styles.detailText}>Weight Goals: {goal}</Text>}
-        {bmi && <Text style={styles.detailText}>BMI: {bmi}</Text>}
-        {bmr && <Text style={styles.detailText}>BMR: {bmr}</Text>}
-        {mealPreference && mealPreference.length > 0 && (
-          <Text style={styles.detailText}>
-            Meal Preferences: {mealPreference.join(', ')}
-          </Text>
-        )}
-      </View>
+      {isEditing ? (
+        <>
+        <Text style={styles.changePhotoText}>Tap to change profile picture</Text>
+          <Text style={styles.title}>Edit personal informations</Text>
 
-      <Text style={styles.contactText}>Contact us at: support@dietethic.fr</Text>
-    </SafeAreaView>
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={mail}
+            onChangeText={setMail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Age"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Height"
+            value={height}
+            onChangeText={setHeight}
+            keyboardType="numeric"
+          />
+
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSaveProfile}
+          >
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => setIsEditing(false)}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <Text style={styles.title}>Informations du Profil</Text>
+          <Text style={styles.infoText}>Name : {userData.name}</Text>
+          <Text style={styles.infoText}>Email : {userData.mail}</Text>
+          <Text style={styles.infoText}>Age : {userData.age}</Text>
+          <Text style={styles.infoText}>Taille : {userData.height} cm</Text>
+          <Text style={styles.infoText}>Weight: {lastWeight} kg </Text>
+
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => setIsEditing(true)}
+          >
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Log out</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginTop: 50,
+    padding: 20,
+    backgroundColor: "#F2F2F2",
   },
   avatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#ddd',
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 10,
-    color: '#6c63ff',
-  },
-  detailsContainer: {
-    marginTop: 30,
-    width: '90%',
-    alignItems: 'flex-start',
-  },
-  detailText: {
-    fontSize: 18,
+    alignSelf: "center",
     marginBottom: 10,
-    color: '#4b4b4b',
-    lineHeight: 25,
   },
-  contactText: {
-    marginTop: 30,
+  changePhotoText: {
+    textAlign: "center",
+    color: "#6A4FD8",
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#6A4FD8",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  input: {
+    backgroundColor: "#E5E0FF",
+    borderRadius: 25,
+    padding: 10,
+    marginBottom: 15,
+  },
+  saveButton: {
+    backgroundColor: "#6A4FD8",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  cancelButton: {
+    backgroundColor: "#FF6A6A",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  cancelButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  editButton: {
+    backgroundColor: "#6A4FD8",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  editButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  logoutButton: {
+    backgroundColor: "#FF6A6A",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  infoText: {
     fontSize: 16,
-    color: '#6c63ff',
-  },
-  errorText: {
-    fontSize: 18,
-    color: 'red',
+    marginVertical: 5,
   },
 });
