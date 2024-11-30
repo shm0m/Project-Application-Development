@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, Image, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from 'react-native';
-import { getDatabase, ref, get, update } from 'firebase/database';
+import { getDatabase, ref, get, update, push } from 'firebase/database'; // Utilisation correcte des imports
 import { auth } from '../FirebaseConfig';
 
 export default function MealPlan({ navigation }) {
   const [selectedMeals, setSelectedMeals] = useState([]);
   const [userCalorieNeeds, setUserCalorieNeeds] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -46,26 +48,65 @@ export default function MealPlan({ navigation }) {
       return;
     }
 
-    // Calcul des besoins caloriques quotidiens
     const calorieNeeds = Math.round(data.bmr * (data.bmi < 18.5 ? 1.2 : data.bmi < 25 ? 1.5 : 1.8));
     setUserCalorieNeeds(calorieNeeds);
 
-    // Sauvegarde dans Firebase
     try {
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
-      await update(userRef, { calorieNeeds }); // Met à jour la base avec userCalorieNeeds
+      await update(userRef, { calorieNeeds });
       console.log('Calorie needs sauvegardé avec succès.');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des besoins caloriques :', error);
     }
   };
+ 
+  const markMealAsConsumed = async (meal, index) => {
+    try {
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        Alert.alert('Erreur', 'Utilisateur non connecté.');
+        return;
+      }
 
+      const db = getDatabase();
+      const consumedRef = ref(db, `users/${userId}/consumedMeals`);
+
+      await push(consumedRef, {
+        name: meal.name,
+        calories: meal.calories,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Met à jour l'état local
+      setSelectedMeals((prevMeals) =>
+        prevMeals.map((m, i) =>
+          i === index ? { ...m, consumed: true } : m
+        )
+      );
+
+      Alert.alert('Succès', `${meal.name} a été enregistré comme consommé.`);
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement du repas :", error);
+      Alert.alert('Erreur', "Impossible d'enregistrer le repas consommé.");
+    }
+  };
+  
+  
+  const updateMealStatus = (index, consumed) => {
+    setSelectedMeals((prev) =>
+      prev.map((meal, i) =>
+        i === index ? { ...meal, consumed } : meal
+      )
+    );
+  };
+  
+  
   const saveConsumedCaloriesToDatabase = async (userId, consumedCalories) => {
     try {
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
-      await update(userRef, { consumedCalories }); // Enregistre le total des calories consommées dans Firebase
+      await update(userRef, { consumedCalories });
       console.log('Consumed calories sauvegardé avec succès.');
     } catch (error) {
       console.error('Erreur lors de la mise à jour des calories consommées :', error);
@@ -84,7 +125,11 @@ export default function MealPlan({ navigation }) {
   };
 
   const removeMeal = (mealIndex) => {
-    setSelectedMeals((prev) => prev.filter((_, index) => index !== mealIndex));
+    setSelectedMeals((prev) => {
+      const updatedMeals = [...prev]; // Crée une copie du tableau actuel
+      updatedMeals.splice(mealIndex, 1); // Supprime l'élément à l'index donné
+      return updatedMeals; // Retourne le nouveau tableau sans l'élément supprimé
+    });
   };
 
   useEffect(() => {
@@ -174,7 +219,12 @@ export default function MealPlan({ navigation }) {
 
       {/* Affichage des repas sélectionnés */}
       <View style={styles.bubble}>
-        <Text style={styles.bubbleTitle}>Selected Meals</Text>
+      <Text style={styles.bubbleTitle}>Selected Meals</Text>
+        <TouchableOpacity onPress={() => setEditing((prev) => !prev)} style={styles.modifyButton}>
+          <Text style={styles.editButton}>
+            {editing ? 'Finish' : 'Edit'}
+          </Text>
+        </TouchableOpacity>
         {Object.keys(groupedMeals).map((type) => (
           <View key={type}>
             <Text style={styles.mealType}>{type}</Text>
@@ -183,16 +233,22 @@ export default function MealPlan({ navigation }) {
                 <Text style={styles.mealItem}>
                   {meal.name} - {meal.calories} kcal
                 </Text>
-                <TouchableOpacity onPress={() => removeMeal(index)}>
-                  <Text style={styles.removeButton}>Remove</Text>
-                </TouchableOpacity>
+                <View style={styles.actionButtons}>
+                  {editing ? (
+                    <TouchableOpacity onPress={() => removeMeal(index)}>
+                      <Text style={styles.removeButton}>Remove</Text>
+                    </TouchableOpacity>
+                  ) : !meal.consumed ? (
+                    <TouchableOpacity onPress={() => markMealAsConsumed(meal, index)}>
+                      <Text style={styles.consumeButton}>Consumed</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
               </View>
             ))}
           </View>
         ))}
-        <Text style={styles.totalCalories}>
-          Total Calories: {totalCalories} kcal
-        </Text>
+        <Text style={styles.totalCalories}>Total Calories: {totalCalories} kcal</Text>
       </View>
     </ScrollView>
   );
@@ -265,4 +321,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 10,
   },
+
+  consumeButton: {
+    color: 'green',
+    marginLeft: 10,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  editButton: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+ 
+  
+  
 });
