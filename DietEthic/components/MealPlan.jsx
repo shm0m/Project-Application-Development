@@ -157,6 +157,26 @@ export default function MealPlan({ navigation }) {
     );
   }
 
+  const addMeal = (meal, type) => {
+    const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
+  
+    if (userCalorieNeeds && totalCalories + meal.calories > userCalorieNeeds + 50) {
+      Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
+      return;
+    }
+  
+    setSelectedMeals((prev) => [...prev, { ...meal, type }]);
+  };
+  
+  const removeMeal = (mealIndex) => {
+    setSelectedMeals((prevMeals) => {
+      const updatedMeals = [...prevMeals];
+      updatedMeals.splice(mealIndex, 1);
+      return updatedMeals;
+    });
+  };
+  
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
