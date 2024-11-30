@@ -19,7 +19,7 @@ export default function FormScreen({ navigation }) {
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [gender, setGender] = useState('');
-  const [goal, setGoal] = useState(''); // Calculé automatiquement
+  const [goal, setGoal] = useState('');
   const [mealPreference, setMealPreference] = useState([]);
   const [mail, setMail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,6 +45,7 @@ export default function FormScreen({ navigation }) {
       gender,
       goal, // Utilisez `goal` calculé auparavant
       bmi,
+      bmr,
       weightHistory: [parseFloat(weight)],
       dates: [new Date().toLocaleDateString('fr-FR')],
       mealPreference,
