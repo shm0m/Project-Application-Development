@@ -1,17 +1,9 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { auth } from "../FirebaseConfig";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, set } from "firebase/database";
-import { calculateGoalWeight } from "./tools";
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { auth } from '../FirebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { getDatabase, ref, set } from 'firebase/database';
+import { calculateGoalWeight } from './tools';
 
 export default function FormScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -31,9 +23,24 @@ export default function FormScreen({ navigation }) {
     return (weightInKg / (heightInMeters ** 2)).toFixed(2);
   };
 
+  const calculateBMR = (weight, height, age, gender) => {
+    if (!weight || !height || !age || !gender) return null; 
+  
+    if (gender === "Male") {
+      return (88.362 + 13.397 * weight + 4.799 * height - 5.677 * age).toFixed(2);
+    } else if (gender === "Female") {
+      return (447.593 + 9.247 * weight + 3.098 * height - 4.330 * age).toFixed(2);
+    }
+  
+    return null;
+  };
+
   const saveUserData = async (userId) => {
     const db = getDatabase();
     const bmi = calculateBMI();
+    const bmr = calculateBMR(parseFloat(weight), parseFloat(height), parseInt(age), gender);
+
+    console.log("BMR Calculated:", bmr);
 
     const userData = {
       name,
@@ -43,9 +50,9 @@ export default function FormScreen({ navigation }) {
       height,
       weight,
       gender,
-      goal, // Utilisez `goal` calculé auparavant
+      goal,
       bmi,
-      bmr,
+      bmr, // Inclure le BMR calculé
       weightHistory: [parseFloat(weight)],
       dates: [new Date().toLocaleDateString('fr-FR')],
       mealPreference,
@@ -74,7 +81,7 @@ export default function FormScreen({ navigation }) {
     console.log("Height:", height);
     console.log("Weight:", weight);
     console.log("Gender:", gender);
-    console.log("Goal:", calculatedGoal); // Vérifier le calcul
+    console.log("Goal:", calculatedGoal);
     console.log("MealPreference:", mealPreference);
 
     if (!mail || !password || !name || !age || !height || !weight || !gender || !calculatedGoal || mealPreference.length === 0) {
@@ -178,7 +185,6 @@ export default function FormScreen({ navigation }) {
     </ScrollView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
