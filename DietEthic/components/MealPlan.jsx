@@ -1,36 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, ScrollView, TouchableOpacity, View, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { getDatabase, ref, update, onValue } from 'firebase/database';
+import { getDatabase, ref, get, update, onValue } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
 export default function MealPlan({ navigation }) {
   const [selectedMeals, setSelectedMeals] = useState([]);
-  const [userCalorieNeeds, setUserCalorieNeeds] = useState(2000);
+  const [userCalorieNeeds, setUserCalorieNeeds] = useState(null); // Initialisé à null pour attendre la récupération
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [mealHistory, setMealHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
 
   useEffect(() => {
+    fetchUserData();
     fetchUserPreferences();
     fetchMealHistory();
   }, []);
 
+  const fetchUserData = async () => {
+    try {
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        Alert.alert('Erreur', 'Utilisateur non connecté.');
+        navigation.navigate('Login');
+        return;
+      }
+
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userId}`);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        calculateCalorieNeeds(userData, userId);
+      } else {
+        Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données utilisateur :', error);
+      Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
+    }
+  };
+
+  const calculateCalorieNeeds = async (data, userId) => {
+    if (!data.bmi || !data.bmr) {
+      Alert.alert('Erreur', 'Données BMI ou BMR manquantes.');
+      setUserCalorieNeeds(2000); // Valeur par défaut si les données sont manquantes
+      return;
+    }
+
+    const calorieNeeds = Math.round(data.bmr * (data.bmi < 18.5 ? 1.2 : data.bmi < 25 ? 1.5 : 1.8));
+    setUserCalorieNeeds(calorieNeeds);
+
+    try {
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userId}`);
+      await update(userRef, { calorieNeeds });
+      console.log('Calorie needs sauvegardé avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des besoins caloriques :', error);
+    }
+  };
+
   const fetchUserPreferences = () => {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
-  
+
     const db = getDatabase();
     const preferencesRef = ref(db, `users/${userId}/mealPreference`);
-  
+
     onValue(preferencesRef, (snapshot) => {
       if (snapshot.exists()) {
         const preferences = snapshot.val();
-        console.log('Meal Preferences from Firebase:', preferences);
         setSelectedCategories(preferences || []);
       } else {
-        console.log('No meal preferences found. Defaulting to all categories.');
         setSelectedCategories(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
       }
     });
@@ -59,7 +103,8 @@ export default function MealPlan({ navigation }) {
 
   const addMeal = (meal, type) => {
     const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
-    if (totalCalories + meal.calories > userCalorieNeeds) {
+
+    if (userCalorieNeeds && totalCalories + meal.calories > userCalorieNeeds) {
       Alert.alert(
         'Calorie Limit Exceeded',
         `Adding ${meal.name} (${meal.calories} kcal) will exceed your daily calorie limit.`
@@ -119,7 +164,8 @@ export default function MealPlan({ navigation }) {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>
-        Selected Calories: {selectedMeals.reduce((sum, meal) => sum + meal.calories, 0)} / {userCalorieNeeds} kcal
+        Selected Calories: {selectedMeals.reduce((sum, meal) => sum + meal.calories, 0)} /{' '}
+        {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
       </Text>
 
       <View style={styles.categoryContainer}>
@@ -252,12 +298,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  dateCard: {
-    backgroundColor: '#EAE8FD',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-  },
   dateButton: {
     backgroundColor: '#B8A0FF',
     padding: 10,
@@ -286,21 +326,21 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   saveButton: {
-    backgroundColor: '#6C63FF', // Couleur principale (violet moderne)
-    padding: 15,               // Padding généreux pour un bouton bien visible
-    borderRadius: 15,          // Coins arrondis pour une touche moderne
-    alignItems: 'center',      // Centrer le texte horizontalement
-    marginTop: 15,             // Espacement supérieur pour éviter la surcharge visuelle
-    marginBottom: 15,          // Ajout d'un espace de 10 px sous le bouton
-    shadowColor: '#000',       // Ombre subtile
-    shadowOpacity: 0.2,        // Transparence de l'ombre
-    shadowRadius: 4,           // Diffusion de l'ombre
-    elevation: 5,              // Ombre pour Android
+    backgroundColor: '#6C63FF',
+    padding: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+    marginTop: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   saveButtonText: {
-    color: '#FFFFFF',          // Texte blanc pour le contraste
-    fontWeight: 'bold',        // Texte en gras pour une meilleure lisibilité
-    fontSize: 16,              // Taille de texte confortable
-    textAlign: 'center',       // Centrer le texte dans le bouton
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
