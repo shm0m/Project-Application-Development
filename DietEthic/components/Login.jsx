@@ -20,8 +20,6 @@ export default function LoginScreen({ navigation }) {
       console.log('Connexion réussie pour l\'utilisateur :', user);
 
       Alert.alert('Succès', 'Connexion réussie !');
-
-      // Redirection vers Main (TabNavigator) avec Profil comme onglet actif
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main', params: { screen: 'Profil' } }],

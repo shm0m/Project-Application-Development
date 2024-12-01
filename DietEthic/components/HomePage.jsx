@@ -16,7 +16,6 @@ export default function HomePage() {
       } else {
         clearInterval(interval);
         setTimeout(() => {
-          // Empêche le retour à la HomePage
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
