@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import {
   ScrollView,
   Text,
@@ -10,16 +11,18 @@ import {
   Alert,
   Image,
 } from "react-native";
-import { getDatabase, ref, onValue, update } from "firebase/database";
+import { getDatabase, ref, get, update } from "firebase/database";
 import { auth } from "../FirebaseConfig";
 import { signOut } from "firebase/auth";
 import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileScreen({ navigation }) {
-  const [userData, setUserData] = useState({ weightHistory: [] });
+  const [userData, setUserData] = useState({weightHistory: [],});
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [profileImage, setProfileImage] = useState("https://i.sstatic.net/YaL3s.jpg");
+  const [profileImage, setProfileImage] = useState(
+    "https://i.pinimg.com/736x/b0/bb/09/b0bb09e2211bc66f9b6341dbcab1a136.jpg"
+  );
 
   const [name, setName] = useState("");
   const [mail, setMail] = useState("");
@@ -29,22 +32,23 @@ export default function ProfileScreen({ navigation }) {
   const [gender, setGender] = useState("");
   const [goal, setGoal] = useState("");
   const [mealPreference, setMealPreference] = useState([]);
-  const [lastWeight, setLastWeight] = useState("No data");
+  const lastWeight =
+    userData.weightHistory?.[userData.weightHistory.length - 1] || "No data";
 
   useEffect(() => {
-    const fetchUserDataRealtime = () => {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        Alert.alert("Erreur", "Aucun utilisateur connecté.");
-        navigation.navigate("Login");
-        return;
-      }
+    const fetchUserData = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+          Alert.alert("Erreur", "Aucun utilisateur connecté.");
+          navigation.navigate("Login");
+          return;
+        }
 
-      const db = getDatabase();
-      const userRef = ref(db, `users/${userId}`);
+        const db = getDatabase();
+        const userRef = ref(db, `users/${userId}`);
+        const snapshot = await get(userRef);
 
-      // Écouter toutes les données utilisateur
-      const unsubscribe = onValue(userRef, (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
@@ -58,23 +62,22 @@ export default function ProfileScreen({ navigation }) {
           setGoal(data.goal || "");
           setMealPreference(data.mealPreference || []);
           setProfileImage(data.profileImage || profileImage);
-
-          // Met à jour le dernier poids
-          const last = data.weightHistory?.[data.weightHistory.length - 1];
-          setLastWeight(last || "No data");
         } else {
           Alert.alert("Erreur", "Aucune donnée utilisateur trouvée.");
         }
-        setLoading(false); // Charger terminé
-      });
-
-      // Retourner la fonction pour désinscrire le listener lors du démontage
-      return unsubscribe;
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données :", error);
+        Alert.alert(
+          "Erreur",
+          "Impossible de récupérer les données utilisateur."
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const unsubscribe = fetchUserDataRealtime();
-    return () => unsubscribe();
-  }, [navigation]);
+    fetchUserData();
+  }, [navigation,userData]);
 
   const handleSaveProfile = async () => {
     try {
@@ -96,17 +99,22 @@ export default function ProfileScreen({ navigation }) {
 
       await update(userRef, updatedData);
 
-      Alert.alert("Success", "Profile updated successfully!");
+      setUserData({ ...userData, ...updatedData });
       setIsEditing(false);
+      Alert.alert("Success", "Profile picture is set up !");
     } catch (error) {
       console.error("Error while updating:", error);
     }
   };
 
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      Alert.alert("Access denied", "Please enable photo permissions in your settings");
+      Alert.alert(
+        "Access denied",
+        "Please enable access photo permissions in your settings"
+      );
       return;
     }
 
@@ -120,7 +128,6 @@ export default function ProfileScreen({ navigation }) {
     if (!result.canceled) {
       const selectedImage = result.assets[0].uri;
       setProfileImage(selectedImage);
-
       const userId = auth.currentUser?.uid;
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
@@ -135,7 +142,7 @@ export default function ProfileScreen({ navigation }) {
       navigation.navigate("Login");
     } catch (error) {
       console.error("Error while disconnecting :", error);
-      Alert.alert("Error", "It's not you, it's us");
+      Alert.alert("Error", "It's not you it's us");
     }
   };
 
@@ -163,7 +170,7 @@ export default function ProfileScreen({ navigation }) {
 
       {isEditing ? (
         <>
-          <Text style={styles.changePhotoText}>Tap to change profile picture</Text>
+        <Text style={styles.changePhotoText}>Tap to change profile picture</Text>
           <Text style={styles.title}>Edit personal informations</Text>
 
           <TextInput
@@ -202,7 +209,10 @@ export default function ProfileScreen({ navigation }) {
             keyboardType="numeric"
           />
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSaveProfile}
+          >
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -219,9 +229,12 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
           <Text style={styles.infoText}>Taille : {userData.height} cm</Text>
-          <Text style={styles.infoText}>Weight: {lastWeight} kg</Text>
+          <Text style={styles.infoText}>Weight: {lastWeight} kg </Text>
 
-          <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => setIsEditing(true)}
+          >
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -236,79 +249,92 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: "#F2F2F2",
+    backgroundColor: "#F9F9FB", 
+    flex: 1, 
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100, 
+    height: 100,
+    borderRadius: 50,
     alignSelf: "center",
-    marginBottom: 10,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: "#6A4FD8", 
   },
   changePhotoText: {
     textAlign: "center",
     color: "#6A4FD8",
+    fontSize: 14,
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#6A4FD8",
-    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: "600",
+    color: "#4B3F72", 
+    marginBottom: 15,
     textAlign: "center",
   },
   input: {
-    backgroundColor: "#E5E0FF",
-    borderRadius: 25,
-    padding: 10,
-    marginBottom: 15,
+    backgroundColor: "#F0EBFF", 
+    borderRadius: 20,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    borderColor: "#6A4FD8", 
+    borderWidth: 1,
   },
   saveButton: {
     backgroundColor: "#6A4FD8",
-    padding: 15,
-    borderRadius: 25,
+    padding: 12,
+    borderRadius: 20,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 15,
   },
   saveButtonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 16,
   },
   cancelButton: {
     backgroundColor: "#FF6A6A",
-    padding: 15,
-    borderRadius: 25,
+    padding: 12,
+    borderRadius: 20,
     alignItems: "center",
     marginTop: 10,
   },
   cancelButtonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 16,
   },
   editButton: {
     backgroundColor: "#6A4FD8",
-    padding: 15,
-    borderRadius: 25,
+    padding: 12,
+    borderRadius: 20,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 15,
   },
   editButtonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 16,
   },
   logoutButton: {
-    backgroundColor: "#FF6A6A",
-    padding: 15,
-    borderRadius: 25,
+    backgroundColor: "#6A4FD8", 
+    padding: 12,
+    borderRadius: 15,
     alignItems: "center",
     marginTop: 10,
   },
   logoutButtonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 14, 
   },
   infoText: {
     fontSize: 16,
-    marginVertical: 5,
+    marginVertical: 6,
+    color: "#333",
   },
 });
+
