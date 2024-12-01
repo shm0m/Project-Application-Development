@@ -35,9 +35,7 @@ export default function MealPlan({ navigation }) {
       }
     });
   };
-  
 
-  // Récupérer l'historique des repas
   const fetchMealHistory = () => {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
@@ -56,68 +54,9 @@ export default function MealPlan({ navigation }) {
       } else {
         setMealHistory([]);
       }
-<<<<<<< HEAD
-  
-      const db = getDatabase();
-      const consumedRef = ref(db, `users/${userId}/consumedMeals`);
-  
-      if (!meal.consumed) {
-        // Ajouter le repas consommé à la base de données
-        await push(consumedRef, {
-          name: meal.name,
-          calories: meal.calories,
-          timestamp: new Date().toISOString(),
-        });
-  
-        Alert.alert('Succès', `${meal.name} a été enregistré comme consommé.`);
-      }
-  
-      // Met à jour l'état local en utilisant une copie sûre des repas
-      setSelectedMeals((prevMeals) => {
-        const updatedMeals = [...prevMeals]; // Créer une copie indépendante
-        updatedMeals[index] = { ...updatedMeals[index], consumed: !updatedMeals[index].consumed };
-        return updatedMeals; // Retourner la copie mise à jour
-      });
-    } catch (error) {
-      console.error('Erreur lors de la gestion du repas consommé :', error);
-      Alert.alert('Erreur', 'Impossible de gérer le repas consommé.');
-    }
-  };
-  
-  
-  const saveConsumedCaloriesToDatabase = async (userId, consumedCalories) => {
-    try {
-      const db = getDatabase();
-      const userRef = ref(db, `users/${userId}`);
-      await update(userRef, { consumedCalories });
-      console.log('Consumed calories sauvegardé avec succès.');
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour des calories consommées :', error);
-    }
-  };
-
-  const addMeal = (meal, type) => {
-    const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
-
-    if (userCalorieNeeds && totalCalories + meal.calories > userCalorieNeeds + 50) {
-      Alert.alert('Calorie Limit Exceeded', 'You have exceeded your calorie limit. Please adjust your plan.');
-      return;
-    }
-
-    setSelectedMeals((prev) => [...prev, { ...meal, type }]);
-  };
-
-  const removeMeal = (mealIndex) => {
-    setSelectedMeals((prev) => {
-      const updatedMeals = [...prev]; // Crée une copie du tableau actuel
-      updatedMeals.splice(mealIndex, 1); // Supprime l'élément à l'index donné
-      return updatedMeals; // Retourne le nouveau tableau sans l'élément supprimé
-=======
->>>>>>> d62a4fb97aa53767a87599916b21df7ca6dd93d1
     });
   };
 
-  // Ajouter un repas
   const addMeal = (meal, type) => {
     const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
     if (totalCalories + meal.calories > userCalorieNeeds) {
@@ -130,12 +69,10 @@ export default function MealPlan({ navigation }) {
     setSelectedMeals((prev) => [...prev, { ...meal, type }]);
   };
 
-  // Supprimer un repas
   const removeMeal = (index) => {
     setSelectedMeals((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Sauvegarder les repas
   const saveMealsForDate = async () => {
     if (selectedMeals.length === 0) {
       Alert.alert('Error', 'No meals selected to save.');
@@ -171,7 +108,6 @@ export default function MealPlan({ navigation }) {
     }
   };
 
-  // Gestion du changement de date
   const handleDateChange = (event, date) => {
     if (event.type === 'set' && date) {
       setSelectedDate(date);
@@ -181,79 +117,31 @@ export default function MealPlan({ navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-  <Text style={styles.title}>Your Meal Plan</Text>
-  <Text style={styles.totalCalories}>
-    Selected Calories: {selectedMeals.reduce((sum, meal) => sum + meal.calories, 0)} / {userCalorieNeeds} kcal
-  </Text>
+      <Text style={styles.title}>Your Meal Plan</Text>
+      <Text style={styles.subtitle}>
+        Selected Calories: {selectedMeals.reduce((sum, meal) => sum + meal.calories, 0)} / {userCalorieNeeds} kcal
+      </Text>
 
-  {/* Catégories filtrées selon les préférences */}
-  <View style={styles.categorySelector}>
-    {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((category) => (
-      selectedCategories.includes(category) && ( // Afficher uniquement les catégories préférées
-        <TouchableOpacity
-          key={category}
-          style={[
-            styles.categoryButton,
-            selectedCategories.includes(category) && styles.categoryButtonActive,
-          ]}
-          onPress={() => navigation.navigate(category, { addMeal })}
-        >
-          <Text
-            style={[
-              styles.categoryButtonText,
-              selectedCategories.includes(category) && styles.categoryButtonTextActive,
-            ]}
-          >
-            {category}
-          </Text>
-        </TouchableOpacity>
-<<<<<<< HEAD
-        {Object.keys(groupedMeals).map((type) => (
-          <View key={type}>
-            <Text style={styles.mealType}>{type}</Text>
-            {groupedMeals[type].map((meal, index) => (
-              <View key={index} style={styles.mealItemRow}>
-                <Text style={styles.mealItem}>
-                  {meal.name} - {meal.calories} kcal
-                </Text>
-                <View style={styles.actionButtons}>
-                  {editing ? (
-                    <TouchableOpacity onPress={() => removeMeal(index)}>
-                      <Text style={styles.removeButton}>Remove</Text>
-                    </TouchableOpacity>
-                  ) : !meal.consumed ? (
-                    <TouchableOpacity onPress={() => markMealAsConsumed(meal, index)}>
-                    <Text style={styles.consumeButton}>Consumed</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity disabled>
-                    <Text style={styles.consumedButton}>Consumed</Text>
-                  </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
+      <View style={styles.categoryContainer}>
+        {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((category) => (
+          selectedCategories.includes(category) && (
+            <TouchableOpacity
+              key={category}
+              style={styles.categoryButton}
+              onPress={() => navigation.navigate(category, { addMeal })}
+            >
+              <Text style={styles.categoryButtonText}>{category}</Text>
+            </TouchableOpacity>
+          )
         ))}
-        <Text style={styles.totalCalories}>Total Calories: {totalCalories} kcal</Text>
       </View>
-    </ScrollView>
-=======
-      )
-    ))}
-  </View>
 
-  {/* Liste des repas sélectionnés */}
-  <View style={styles.bubble}>
-    <Text style={styles.bubbleTitle}>Selected Meals</Text>
-    {selectedCategories.map((category) => {
-      const mealsByCategory = selectedMeals.filter((meal) => meal.type === category);
-      if (mealsByCategory.length === 0) return null;
-
-      return (
-        <View key={category} style={styles.categorySection}>
-          <Text style={styles.categoryTitle}>{category}</Text>
-          {mealsByCategory.map((meal, index) => (
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Selected Meals</Text>
+        {selectedMeals.length === 0 ? (
+          <Text style={styles.emptyText}>No meals selected yet.</Text>
+        ) : (
+          selectedMeals.map((meal, index) => (
             <View key={index} style={styles.mealItemRow}>
               <Text style={styles.mealItem}>
                 {meal.name} ({meal.calories} kcal)
@@ -262,55 +150,47 @@ export default function MealPlan({ navigation }) {
                 <Text style={styles.removeButton}>Remove</Text>
               </TouchableOpacity>
             </View>
-          ))}
-        </View>
-      );
-    })}
-    {selectedMeals.length === 0 && <Text style={styles.emptyText}>No meals selected yet.</Text>}
-  </View>
+          ))
+        )}
+      </View>
 
-  {/* Sélecteur de date */}
-  <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-    <Text style={styles.dateButtonText}>
-      Select Date: {selectedDate.toISOString().split('T')[0]}
-    </Text>
-  </TouchableOpacity>
-  {showDatePicker && (
-    <DateTimePicker
-      value={selectedDate}
-      mode="date"
-      display="default"
-      onChange={handleDateChange}
-    />
-  )}
+      <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+        <Text style={styles.dateButtonText}>
+          Select Date: {selectedDate.toISOString().split('T')[0]}
+        </Text>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
 
-  {/* Bouton pour sauvegarder */}
-  <TouchableOpacity style={styles.saveButton} onPress={saveMealsForDate}>
-    <Text style={styles.saveButtonText}>Validate and Save Meals</Text>
-  </TouchableOpacity>
+      <TouchableOpacity style={styles.saveButton} onPress={saveMealsForDate}>
+        <Text style={styles.saveButtonText}>Validate and Save Meals</Text>
+      </TouchableOpacity>
 
-  {/* Historique des repas */}
-  <View style={styles.historySection}>
-    <Text style={styles.historyTitle}>Meal History</Text>
-    {mealHistory.length === 0 ? (
-      <Text style={styles.emptyText}>No history yet.</Text>
-    ) : (
-      mealHistory.map((day, index) => (
-        <View key={index} style={styles.historyItem}>
-          <Text style={styles.historyDate}>{day.date}</Text>
-          <Text>Total Calories: {day.totalCalories} kcal</Text>
-          {day.meals.map((meal, i) => (
-            <Text key={i} style={styles.historyMeal}>
-              {meal.type}: {meal.name} ({meal.calories} kcal)
-            </Text>
-          ))}
-        </View>
-      ))
-    )}
-  </View>
-</ScrollView>
-
->>>>>>> d62a4fb97aa53767a87599916b21df7ca6dd93d1
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Meal History</Text>
+        {mealHistory.length === 0 ? (
+          <Text style={styles.emptyText}>No history yet.</Text>
+        ) : (
+          mealHistory.map((day, index) => (
+            <View key={index} style={styles.historyItem}>
+              <Text style={styles.historyDate}>{day.date}</Text>
+              <Text>Total Calories: {day.totalCalories} kcal</Text>
+              {day.meals.map((meal, i) => (
+                <Text key={i} style={styles.historyMeal}>
+                  {meal.type}: {meal.name} ({meal.calories} kcal)
+                </Text>
+              ))}
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -323,94 +203,104 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#4B3F72',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#888',
     marginBottom: 20,
   },
-  dateButton: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  dateButtonText: {
+  categoryButton: {
+    backgroundColor: '#6C63FF',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+    width: '45%',
+  },
+  categoryButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
     textAlign: 'center',
   },
   card: {
+    backgroundColor: '#EAE8FD',
+    borderRadius: 15,
+    padding: 15,
     marginBottom: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#f8f8f8',
-    elevation: 2,
   },
-  image: {
-    width: '100%',
-    height: 150,
-  },
-  cardText: {
-    padding: 10,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  bubble: {
-    marginTop: 20,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0',
-  },
-  bubbleTitle: {
-    fontSize: 20,
+  cardTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#4B3F72',
   },
   mealItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 10,
   },
   mealItem: {
     fontSize: 16,
+    color: '#333',
   },
-  removeButton: {
-    fontSize: 14,
-    color: 'red',
-    textDecorationLine: 'underline',
+  dateCard: {
+    backgroundColor: '#EAE8FD',
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+  },
+  dateButton: {
+    backgroundColor: '#B8A0FF',
+    padding: 10,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   emptyText: {
     color: '#888',
     fontStyle: 'italic',
   },
-  saveButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
+  historyItem: {
+    marginBottom: 10,
   },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  totalCalories: {
+  historyDate: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 10,
   },
-<<<<<<< HEAD
-
-  consumedButton: {
-    color: 'ddd',
-    marginLeft: 10,
+  historyMeal: {
+    fontSize: 14,
+    color: '#555',
+  },
+  saveButton: {
+    backgroundColor: '#6C63FF', // Couleur principale (violet moderne)
+    padding: 15,               // Padding généreux pour un bouton bien visible
+    borderRadius: 15,          // Coins arrondis pour une touche moderne
+    alignItems: 'center',      // Centrer le texte horizontalement
+    marginTop: 15,             // Espacement supérieur pour éviter la surcharge visuelle
+    marginBottom: 15,          // Ajout d'un espace de 10 px sous le bouton
+    shadowColor: '#000',       // Ombre subtile
+    shadowOpacity: 0.2,        // Transparence de l'ombre
+    shadowRadius: 4,           // Diffusion de l'ombre
+    elevation: 5,              // Ombre pour Android
+  },
+  saveButtonText: {
+    color: '#FFFFFF',          // Texte blanc pour le contraste
+    fontWeight: 'bold',        // Texte en gras pour une meilleure lisibilité
+    fontSize: 16,              // Taille de texte confortable
+    textAlign: 'center',       // Centrer le texte dans le bouton
   },
 });
-=======
-  
-});
->>>>>>> d62a4fb97aa53767a87599916b21df7ca6dd93d1
