@@ -30,7 +30,7 @@ const snackOptions = {
   
 
   export default function Snack({ route }) {
-    const { addMeal } = route.params; // Récupération de la fonction passée via les paramètres de navigation
+    const { addMeal } = route.params; 
   
     return (
       <ScrollView style={styles.container}>
@@ -39,7 +39,7 @@ const snackOptions = {
         <Text style={styles.subtitle}>Salty</Text>
         {snackOptions.salty.map((item, index) => (
           <View key={`salty-${index}`} style={styles.item}>
-            {item.image ? ( // Vérifie si l'URL de l'image existe
+            {item.image ? ( 
               <Image source={{ uri: item.image }} style={styles.image} />
             ) : null}
             <View style={styles.textContainer}>
@@ -55,7 +55,7 @@ const snackOptions = {
         <Text style={styles.subtitle}>Sweet</Text>
         {snackOptions.sweet.map((item, index) => (
           <View key={`sweet-${index}`} style={styles.item}>
-            {item.image ? ( // Vérifie si l'URL de l'image existe
+            {item.image ? (
               <Image source={{ uri: item.image }} style={styles.image} />
             ) : null}
             <View style={styles.textContainer}>

@@ -26,7 +26,7 @@ export default function Graph() {
             const userData = snapshot.val();
 
             const weights = (userData.weightHistory || []).map((weight) => parseFloat(weight) || 0);
-            const weightDates = userData.dates || [new Date().toLocaleDateString('fr-FR')];
+            const weightDates = userData.dates || [new Date().toLocaleDateString('en-UK')];
             const goalWeight = parseFloat(userData.goal) || calculateGoalWeight(userData.height);
 
             setWeightHistory(weights);
