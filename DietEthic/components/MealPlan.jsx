@@ -6,17 +6,22 @@ import { auth } from '../FirebaseConfig';
 
 export default function MealPlan({ navigation }) {
   const [selectedMeals, setSelectedMeals] = useState([]);
-  const [userCalorieNeeds, setUserCalorieNeeds] = useState(null); // Initialisé à null pour attendre la récupération
+  const [userCalorieNeeds, setUserCalorieNeeds] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [mealHistory, setMealHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
+  const [dailyTotalCalories, setDailyTotalCalories] = useState(0); // Nouveau state pour totalCalories
 
   useEffect(() => {
     fetchUserData();
     fetchUserPreferences();
     fetchMealHistory();
   }, []);
+
+  useEffect(() => {
+    fetchTotalCaloriesForDate();
+  }, [selectedDate, mealHistory]);
 
   const fetchUserData = async () => {
     try {
@@ -101,6 +106,17 @@ export default function MealPlan({ navigation }) {
     });
   };
 
+  const fetchTotalCaloriesForDate = () => {
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    const dayData = mealHistory.find((day) => day.date === formattedDate);
+
+    if (dayData) {
+      setDailyTotalCalories(dayData.totalCalories || 0);
+    } else {
+      setDailyTotalCalories(0); // Pas de données pour cette date
+    }
+  };
+
   const addMeal = (meal, type) => {
     const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
@@ -164,8 +180,7 @@ export default function MealPlan({ navigation }) {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>
-        Selected Calories: {selectedMeals.reduce((sum, meal) => sum + meal.calories, 0)} /{' '}
-        {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
+        Selected Calories: {dailyTotalCalories} / {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
       </Text>
 
       <View style={styles.categoryContainer}>
