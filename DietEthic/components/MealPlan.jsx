@@ -6,17 +6,22 @@ import { auth } from '../FirebaseConfig';
 
 export default function MealPlan({ navigation }) {
   const [selectedMeals, setSelectedMeals] = useState([]);
-  const [userCalorieNeeds, setUserCalorieNeeds] = useState(null); // Initialisé à null pour attendre la récupération
+  const [userCalorieNeeds, setUserCalorieNeeds] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [mealHistory, setMealHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
+  const [dailyTotalCalories, setDailyTotalCalories] = useState(0); // Nouveau state pour totalCalories
 
   useEffect(() => {
     fetchUserData();
     fetchUserPreferences();
     fetchMealHistory();
   }, []);
+
+  useEffect(() => {
+    fetchTotalCaloriesForDate();
+  }, [selectedDate, mealHistory]);
 
   const fetchUserData = async () => {
     try {
@@ -101,6 +106,17 @@ export default function MealPlan({ navigation }) {
     });
   };
 
+  const fetchTotalCaloriesForDate = () => {
+    const formattedDate = selectedDate.toISOString().split('T')[0];
+    const dayData = mealHistory.find((day) => day.date === formattedDate);
+
+    if (dayData) {
+      setDailyTotalCalories(dayData.totalCalories || 0);
+    } else {
+      setDailyTotalCalories(0); // Pas de données pour cette date
+    }
+  };
+
   const addMeal = (meal, type) => {
     const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
@@ -164,8 +180,7 @@ export default function MealPlan({ navigation }) {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>
-        Selected Calories: {selectedMeals.reduce((sum, meal) => sum + meal.calories, 0)} /{' '}
-        {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
+        Selected Calories: {dailyTotalCalories} / {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
       </Text>
 
       <View style={styles.categoryContainer}>
@@ -244,18 +259,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#F9F8FF', 
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#4B3F72',
+    color: '#6C4AB6', 
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#888',
+    color: '#7E7E7E', 
     marginBottom: 20,
+    textAlign: 'center',
   },
   categoryContainer: {
     flexDirection: 'row',
@@ -264,78 +281,101 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   categoryButton: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#6C4AB6', 
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 15,
     alignItems: 'center',
     width: '45%',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
   categoryButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '600',
     fontSize: 16,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: '#EAE8FD',
+    backgroundColor: '#E9E6FE',
     borderRadius: 15,
-    padding: 15,
+    padding: 20,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#4B3F72',
+    color: '#6C4AB6',
+    textAlign: 'left',
+    
   },
   mealItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
+    paddingVertical: 10,
+    borderBottomColor: '#DDD',
+    borderBottomWidth: 1,
   },
   mealItem: {
     fontSize: 16,
-    color: '#333',
+    color: '#4B4B4B',
   },
   dateButton: {
-    backgroundColor: '#B8A0FF',
-    padding: 10,
+    backgroundColor: '#6C4AB6', 
+    padding: 12,
     borderRadius: 15,
     alignItems: 'center',
+    marginBottom: 20,
   },
   dateButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 16,
   },
   emptyText: {
-    color: '#888',
+    color: '#B3B3B3',
     fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 10,
   },
   historyItem: {
-    marginBottom: 10,
+    marginBottom: 15,
+    padding: 15,
+    backgroundColor: '#F4F1FE',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   historyDate: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#6C4AB6',
+    marginBottom: 5,
   },
   historyMeal: {
     fontSize: 14,
-    color: '#555',
+    color: '#4F4F4F',
   },
   saveButton: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#6C4AB6',
     padding: 15,
     borderRadius: 15,
     alignItems: 'center',
-    marginTop: 15,
-    marginBottom: 15,
     shadowColor: '#000',
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowRadius: 5,
+    elevation: 4,
+    marginTop: 30, 
   },
   saveButtonText: {
     color: '#FFFFFF',
