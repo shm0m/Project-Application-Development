@@ -314,7 +314,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#6C4AB6',
     textAlign: 'left',
-    
   },
   mealItemRow: {
     flexDirection: 'row',
@@ -375,7 +374,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 4,
-    marginTop: 30, 
+    marginTop: 2, 
+    marginBottom: 20, // Ajout d'un espace de 10 pixels sous le bouton
   },
   saveButtonText: {
     color: '#FFFFFF',
