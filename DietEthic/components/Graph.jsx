@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Keyboard } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { calculateGoalWeight } from './tools';
-import Quote from './Quote';
-import { Keyboard } from 'react-native';
 
 export default function Graph() {
   const [weightHistory, setWeightHistory] = useState([0]);
   const [dates, setDates] = useState(['']);
   const [goal, setGoal] = useState(0);
+  const [bmr, setBmr] = useState(0);
+  const [bmi, setBmi] = useState(0);
   const [newWeight, setNewWeight] = useState('');
-
+  const [calorieNeeds, setCalorieNeeds] = useState(0);
+  const [userData, setUserData] = useState(null);
   const auth = getAuth();
   const db = getDatabase();
 
@@ -23,11 +24,13 @@ export default function Graph() {
         try {
           const snapshot = await get(ref(db, `users/${user.uid}`));
           if (snapshot.exists()) {
-            const userData = snapshot.val();
+            const usr = snapshot.val();
+            setUserData(usr);
 
-            const weights = (userData.weightHistory || []).map((weight) => parseFloat(weight) || 0);
-            const weightDates = userData.dates || [new Date().toLocaleDateString('en-UK')];
-            const goalWeight = parseFloat(userData.goal) || calculateGoalWeight(userData.height);
+            // Validation et traitement des données utilisateur
+            const weights = (usr.weightHistory || []).map((weight) => parseFloat(weight) || 0);
+            const weightDates = usr.dates || [new Date().toLocaleDateString('en-UK')];
+            const goalWeight = parseFloat(usr.goal) || calculateGoalWeight(usr.height);
 
             setWeightHistory(weights);
             setDates(weightDates);
@@ -58,12 +61,26 @@ export default function Graph() {
 
       setWeightHistory(updatedHistory);
       setDates(updatedDates);
+
+      const bmrCalculated = calculateBMR(newWeight, userData.height, userData.age, userData.gender);
+      setBmr(bmrCalculated);
+
+      const bmiCalculated = calculateBMI(userData.height, newWeight);
+      setBmi(bmiCalculated);
+
+      const cn = Math.round(bmrCalculated * (bmiCalculated < 18.5 ? 1.2 : bmiCalculated < 25 ? 1.5 : 1.8));
+      setCalorieNeeds(cn);
+
       setNewWeight('');
 
       try {
         await update(ref(db, `users/${user.uid}`), {
           weightHistory: updatedHistory,
-          dates: updatedDates,weight:newWeight
+          dates: updatedDates,
+          weight: newWeight,
+          bmr: bmrCalculated,
+          bmi: bmiCalculated,
+          calorieNeeds: cn,
         });
         console.log('Weight successfully added to Firebase.');
       } catch (error) {
@@ -72,14 +89,34 @@ export default function Graph() {
     }
   };
 
-  const sanitizedWeightHistory = weightHistory.filter((value) => !isNaN(value) && value !== null && value !== undefined);
+  const calculateBMI = (height, weight) => {
+    const heightInMeters = parseFloat(height) / 100;
+    const weightInKg = parseFloat(weight);
+    if (!heightInMeters || !weightInKg) return null;
+    return (weightInKg / (heightInMeters ** 2)).toFixed(2);
+  };
+
+  const calculateBMR = (weight, height, age, gender) => {
+    if (!weight || !height || !age || !gender) return null;
+
+    if (gender === "Male") {
+      return (88.362 + 13.397 * weight + 4.799 * height - 5.677 * age).toFixed(2);
+    } else if (gender === "Female") {
+      return (447.593 + 9.247 * weight + 3.098 * height - 4.330 * age).toFixed(2);
+    }
+
+    return null;
+  };
+
+  const sanitizedWeightHistory = (weightHistory || []).filter(
+    (value) => !isNaN(value) && value !== null && value !== undefined
+  );
   const sanitizedGoal = !isNaN(goal) && goal !== null && goal !== undefined ? goal : 0;
 
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Your weight progression</Text>
 
-      {/* Weight input */}
       <TextInput
         style={styles.input}
         placeholder="Enter your weight (kg)"
@@ -133,11 +170,6 @@ export default function Graph() {
       ) : (
         <Text>No data to display yet.</Text>
       )}
-      
-      {/* Inspirational Quote */}
-      <View style={styles.quoteCard}>
-        <Text style={styles.quoteText}>"Always believe in yourself."</Text>
-      </View>
     </View>
   );
 }
@@ -175,19 +207,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  quoteCard: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#e8d6fc',
-    borderRadius: 10,
-    width: '90%',
-    alignItems: 'center',
-  },
-  quoteText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#5b3d90',
-    textAlign: 'center',
   },
 });
