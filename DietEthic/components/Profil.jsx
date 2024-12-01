@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   ScrollView,
@@ -22,6 +21,7 @@ export default function ProfileScreen({ navigation }) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState("https://i.sstatic.net/YaL3s.jpg");
 
+  // États locaux pour l'édition
   const [name, setName] = useState("");
   const [mail, setMail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +32,9 @@ export default function ProfileScreen({ navigation }) {
   const [mealPreference, setMealPreference] = useState([]);
   const [lastWeight, setLastWeight] = useState("No data");
   const [weight, setWeight] = useState();
+  const [bmr, setBmr] = useState(0);
+  const [bmi, setBmi] = useState(0);
+  const [calorieNeeds, setCalorieNeeds] = useState(0);
 
   useEffect(() => {
     const fetchUserDataRealtime = () => {
@@ -45,12 +48,13 @@ export default function ProfileScreen({ navigation }) {
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
 
-      // Écouter toutes les données utilisateur
+      // Écouter les données utilisateur en temps réel
       const unsubscribe = onValue(userRef, (snapshot) => {
-        if (snapshot.exists()) {
+        if (snapshot.exists() && !isEditing) { // Ne pas mettre à jour les champs en mode édition
           const data = snapshot.val();
           setUserData(data);
 
+          // Mettre à jour les champs uniquement si non en mode édition
           setName(data.name || "");
           setMail(data.mail || "");
           setPassword(data.password || "");
@@ -62,22 +66,19 @@ export default function ProfileScreen({ navigation }) {
           setProfileImage(data.profileImage || profileImage);
 
           // Met à jour le dernier poids
-          const last = data.weightHistory?.[data.weightHistory.length-1];
+          const last = data.weightHistory?.[data.weightHistory.length - 1];
           setLastWeight(last || "No data");
-          setWeight(last );
-        } else {
-          Alert.alert("Erreur", "Aucune donnée utilisateur trouvée.");
+          setWeight(last);
         }
-        setLoading(false); // Charger terminé
+        setLoading(false); // Chargement terminé
       });
 
-      // Retourner la fonction pour désinscrire le listener lors du démontage
       return unsubscribe;
     };
 
     const unsubscribe = fetchUserDataRealtime();
     return () => unsubscribe();
-  }, [navigation,userData]);
+  }, [navigation, isEditing]); // Ajout de `isEditing` comme dépendance
 
   const handleSaveProfile = async () => {
     try {
@@ -96,8 +97,9 @@ export default function ProfileScreen({ navigation }) {
         mealPreference,
         profileImage,
         weight,
-        
-
+        bmi,
+        bmr,
+        calorieNeeds
       };
 
       await update(userRef, updatedData);
@@ -152,13 +154,37 @@ export default function ProfileScreen({ navigation }) {
       </View>
     );
   }
+  const calculateBMI = (height, weight) => {
+    const heightInMeters = parseFloat(height) / 100;
+    const weightInKg = parseFloat(weight);
+    if (!heightInMeters || !weightInKg) return null;
+    return (weightInKg / (heightInMeters ** 2)).toFixed(2);
+  };
 
-  if (!userData) {
-    return (
-      <View style={styles.container}>
-        <Text>Utilisateur non trouvé.</Text>
-      </View>
-    );
+  const calculateBMR = (weight, height, age, gender) => {
+    if (!weight || !height || !age || !gender) return null;
+
+    if (gender === "Male") {
+      return (88.362 + 13.397 * weight + 4.799 * height - 5.677 * age).toFixed(2);
+    } else if (gender === "Female") {
+      return (447.593 + 9.247 * weight + 3.098 * height - 4.330 * age).toFixed(2);
+    }
+
+    return null;
+  };
+const calculateCalorie=()=>{
+  const bmrCalculated = calculateBMR(weight, height, age, gender);
+  setBmr(bmrCalculated);
+
+  const bmiCalculated = calculateBMI(height, weight);
+  setBmi(bmiCalculated);
+
+  const cn = Math.round(bmrCalculated * (bmiCalculated < 18.5 ? 1.2 : bmiCalculated < 25 ? 1.5 : 1.8));
+  setCalorieNeeds(cn);
+};
+  const onHeigtChanged=(val)=>{
+    setHeight(val);
+    calculateCalorie();
   }
 
   return (
@@ -204,7 +230,7 @@ export default function ProfileScreen({ navigation }) {
             style={styles.input}
             placeholder="Height"
             value={height}
-            onChangeText={setHeight}
+            onChangeText={onHeigtChanged}
             keyboardType="numeric"
           />
 
@@ -225,7 +251,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
           <Text style={styles.infoText}>Taille : {userData.height} cm</Text>
-          <Text style={styles.infoText}>Weight: {lastWeight} kg</Text>
+          <Text style={styles.infoText}>Weight: {userData.weight} kg</Text>
 
           <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
             <Text style={styles.editButtonText}>Edit</Text>
@@ -238,7 +264,6 @@ export default function ProfileScreen({ navigation }) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     padding: 20,
