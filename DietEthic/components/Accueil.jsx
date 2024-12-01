@@ -3,6 +3,12 @@ import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'rea
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
+// Import des plats depuis les fichiers externes
+import { breakfastItems } from './Breakfast';
+import { lunchItems } from './Lunch';
+import { dinnerItems } from './Dinner';
+import { snackItems } from './Snack';
+
 export default function HomeScreen() {
   const [userData, setUserData] = useState(null);
   const [consumedCalories, setConsumedCalories] = useState(0);
@@ -30,6 +36,10 @@ export default function HomeScreen() {
           setConsumedCalories(data.consumedCalories || 0);
           fetchDailyMeals(data.mealHistory);
           fetchLastDayHistory(data.mealHistory);
+          generateSuggestedMeals(
+            data.calorieNeeds - (data.consumedCalories || 0),
+            data.mealPreference || []
+          );
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -68,6 +78,26 @@ export default function HomeScreen() {
     } else {
       setLastDayHistory(null);
     }
+  };
+
+  const generateSuggestedMeals = (remainingCalories, mealPreferences) => {
+    if (!mealPreferences || remainingCalories <= 0) {
+      setSuggestedMeals([]);
+      return;
+    }
+
+    const allMeals = {
+      Breakfast: breakfastItems,
+      Lunch: lunchItems,
+      Dinner: dinnerItems,
+      Snacks: snackItems,
+    };
+
+    const filteredMeals = mealPreferences.flatMap((category) =>
+      allMeals[category]?.filter((meal) => meal.calories <= remainingCalories) || []
+    );
+
+    setSuggestedMeals(filteredMeals.slice(0, 5)); // Limite de 5 suggestions
   };
 
   const markAsConsumed = async (meal, index) => {
@@ -169,17 +199,21 @@ export default function HomeScreen() {
         ) : (
           <Text>No history available for the last day.</Text>
         )}
-      </View>
+      </View> 
 
       {/* Suggested Meals */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Suggested Meals</Text>
-        {suggestedMeals.map((meal, index) => (
-          <View key={index} style={styles.mealItem}>
-            <Text>{meal.type}: {meal.name}</Text>
-            <Text>{meal.calories} kcal</Text>
-          </View>
-        ))}
+        {suggestedMeals.length > 0 ? (
+          suggestedMeals.map((meal, index) => (
+            <View key={index} style={styles.mealItem}>
+              <Text>{meal.name}</Text>
+              <Text>{meal.calories} kcal</Text>
+            </View>
+          ))
+        ) : (
+          <Text>No meals to suggest.</Text>
+        )}
       </View>
     </ScrollView>
   );
