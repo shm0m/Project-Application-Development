@@ -29,6 +29,7 @@ export default function HomeScreen() {
           setUserData(data);
           setConsumedCalories(data.consumedCalories || 0);
           fetchDailyMeals(data.mealHistory);
+          fetchLastDayHistory(data.mealHistory);
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -49,6 +50,23 @@ export default function HomeScreen() {
       setDailyMeals(mealHistory[today].meals || []);
     } else {
       setDailyMeals([]);
+    }
+  };
+
+  const fetchLastDayHistory = (mealHistory) => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().split('T')[0];
+
+    if (mealHistory && mealHistory[yesterdayDate]) {
+      const history = mealHistory[yesterdayDate];
+      setLastDayHistory({
+        date: yesterdayDate,
+        totalCalories: history.meals.reduce((sum, meal) => sum + meal.calories, 0),
+        meals: history.meals,
+      });
+    } else {
+      setLastDayHistory(null);
     }
   };
 
@@ -141,7 +159,7 @@ export default function HomeScreen() {
         {lastDayHistory ? (
           <>
             <Text style={styles.historyDate}>{lastDayHistory.date}</Text>
-            <Text>Total Calories: {lastDayHistory.totalCalories} kcal</Text>
+            <Text>Total Calories Consumed: {lastDayHistory.totalCalories} kcal</Text>
             {lastDayHistory.meals.map((meal, index) => (
               <View key={index} style={styles.historyMeal}>
                 <Text>{meal.type}: {meal.name} ({meal.calories} kcal)</Text>
@@ -149,7 +167,7 @@ export default function HomeScreen() {
             ))}
           </>
         ) : (
-          <Text>No history available.</Text>
+          <Text>No history available for the last day.</Text>
         )}
       </View>
 
