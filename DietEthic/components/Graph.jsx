@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
@@ -34,7 +34,7 @@ export default function Graph() {
             setGoal(goalWeight);
           }
         } catch (error) {
-          console.error('Erreur lors de la récupération des données utilisateur :', error);
+          console.error('Error fetching user data:', error);
         }
       }
     };
@@ -52,10 +52,10 @@ export default function Graph() {
 
     const user = auth.currentUser;
     if (user) {
-      const today = new Date().toLocaleDateString('en-UK'); 
+      const today = new Date().toLocaleDateString('en-UK');
       const updatedHistory = [...weightHistory, parseFloat(newWeight)];
       const updatedDates = [...dates, today];
-      
+
       setWeightHistory(updatedHistory);
       setDates(updatedDates);
       setNewWeight('');
@@ -63,11 +63,11 @@ export default function Graph() {
       try {
         await update(ref(db, `users/${user.uid}`), {
           weightHistory: updatedHistory,
-          dates: updatedDates,
+          dates: updatedDates,weight:newWeight
         });
-        console.log('Poids ajouté avec succès dans Firebase.');
+        console.log('Weight successfully added to Firebase.');
       } catch (error) {
-        console.error('Erreur lors de la mise à jour du poids dans Firebase :', error);
+        console.error('Error updating weight in Firebase:', error);
       }
     }
   };
@@ -79,15 +79,17 @@ export default function Graph() {
     <View style={styles.container}>
       <Text style={styles.text}>Your weight progression</Text>
 
-      {/* weight input*/}
+      {/* Weight input */}
       <TextInput
         style={styles.input}
-        placeholder="Entrez votre poids (kg)"
+        placeholder="Enter your weight (kg)"
         keyboardType="numeric"
         value={newWeight}
         onChangeText={(text) => setNewWeight(text)}
       />
-      <Button title="Ajouter" onPress={addWeight} />
+      <TouchableOpacity style={styles.addButton} onPress={addWeight}>
+        <Text style={styles.addButtonText}>Add</Text>
+      </TouchableOpacity>
 
       {sanitizedWeightHistory.length > 0 && dates.length > 0 ? (
         <LineChart
@@ -129,10 +131,13 @@ export default function Graph() {
           bezier
         />
       ) : (
-        <Text>Pas encore de données à afficher.</Text>
+        <Text>No data to display yet.</Text>
       )}
-      {/* Citation inspirante */}
-    <Quote />
+      
+      {/* Inspirational Quote */}
+      <View style={styles.quoteCard}>
+        <Text style={styles.quoteText}>"Always believe in yourself."</Text>
+      </View>
     </View>
   );
 }
