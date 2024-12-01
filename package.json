@@ -13,6 +13,7 @@
     "react-native-screens": "^3.31.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12"
+    "@types/react": "^18.3.12",
+    "@react-native-community/cli": "latest"
   }
 }

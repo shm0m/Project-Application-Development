@@ -68,37 +68,31 @@ export default function MealPlan({ navigation }) {
         Alert.alert('Erreur', 'Utilisateur non connecté.');
         return;
       }
-
+  
       const db = getDatabase();
       const consumedRef = ref(db, `users/${userId}/consumedMeals`);
-
-      await push(consumedRef, {
-        name: meal.name,
-        calories: meal.calories,
-        timestamp: new Date().toISOString(),
+  
+      if (!meal.consumed) {
+        // Ajouter le repas consommé à la base de données
+        await push(consumedRef, {
+          name: meal.name,
+          calories: meal.calories,
+          timestamp: new Date().toISOString(),
+        });
+  
+        Alert.alert('Succès', `${meal.name} a été enregistré comme consommé.`);
+      }
+  
+      // Met à jour l'état local en utilisant une copie sûre des repas
+      setSelectedMeals((prevMeals) => {
+        const updatedMeals = [...prevMeals]; // Créer une copie indépendante
+        updatedMeals[index] = { ...updatedMeals[index], consumed: !updatedMeals[index].consumed };
+        return updatedMeals; // Retourner la copie mise à jour
       });
-
-      // Met à jour l'état local
-      setSelectedMeals((prevMeals) =>
-        prevMeals.map((m, i) =>
-          i === index ? { ...m, consumed: true } : m
-        )
-      );
-
-      Alert.alert('Succès', `${meal.name} a été enregistré comme consommé.`);
     } catch (error) {
-      console.error("Erreur lors de l'enregistrement du repas :", error);
-      Alert.alert('Erreur', "Impossible d'enregistrer le repas consommé.");
+      console.error('Erreur lors de la gestion du repas consommé :', error);
+      Alert.alert('Erreur', 'Impossible de gérer le repas consommé.');
     }
-  };
-  
-  
-  const updateMealStatus = (index, consumed) => {
-    setSelectedMeals((prev) =>
-      prev.map((meal, i) =>
-        i === index ? { ...meal, consumed } : meal
-      )
-    );
   };
   
   
@@ -240,9 +234,13 @@ export default function MealPlan({ navigation }) {
                     </TouchableOpacity>
                   ) : !meal.consumed ? (
                     <TouchableOpacity onPress={() => markMealAsConsumed(meal, index)}>
-                      <Text style={styles.consumeButton}>Consumed</Text>
-                    </TouchableOpacity>
-                  ) : null}
+                    <Text style={styles.consumeButton}>Consumed</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity disabled>
+                    <Text style={styles.consumedButton}>Consumed</Text>
+                  </TouchableOpacity>
+                  )}
                 </View>
               </View>
             ))}
@@ -341,7 +339,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
- 
-  
-  
+
+  consumedButton: {
+    color: 'ddd',
+    marginLeft: 10,
+  },
 });
