@@ -5,9 +5,9 @@ import { auth } from '../FirebaseConfig';
 
 export default function HomeScreen() {
   const [userData, setUserData] = useState(null);
-  const [consumedCalories, setConsumedCalories] = useState(0); // Pour stocker le totalCalories de MealPlan
+  const [consumedCalories, setConsumedCalories] = useState(0);
   const [suggestedMeals, setSuggestedMeals] = useState([]);
-  const [history, setHistory] = useState([]);
+  const [lastDayHistory, setLastDayHistory] = useState(null); // Historique du dernier jour
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,9 +26,9 @@ export default function HomeScreen() {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
-          setConsumedCalories(data.totalCalories || 0); // Récupérer le total des calories consommées
-          setHistory(data.mealHistory || []); // Charger l'historique
-          generateSuggestedMeals(data.mealPreference, data.calorieNeeds || 2000); // Utiliser calorieNeeds pour suggérer des repas
+          setConsumedCalories(data.totalCalories || 0);
+          fetchLastDayHistory(data.mealHistory); // Appelle la fonction pour obtenir l'historique du dernier jour
+          generateSuggestedMeals(data.mealPreference, data.calorieNeeds || 2000);
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -43,19 +43,34 @@ export default function HomeScreen() {
     fetchUserData();
   }, []);
 
+  const fetchLastDayHistory = (mealHistory) => {
+    if (!mealHistory || Object.keys(mealHistory).length === 0) {
+      setLastDayHistory(null);
+      return;
+    }
+
+    // Trier les dates dans l'historique pour trouver le dernier jour
+    const sortedDates = Object.keys(mealHistory).sort((a, b) => new Date(b) - new Date(a));
+    const lastDay = sortedDates[0]; // Récupère la dernière date
+    setLastDayHistory({ date: lastDay, ...mealHistory[lastDay] });
+  };
+
   const generateSuggestedMeals = (mealPreferences, calorieLimit) => {
-    // Simule des suggestions de repas en fonction des préférences de l'utilisateur
     const allMeals = [
-      { name: 'Oatmeal with Berries', calories: 300 },
-      { name: 'Grilled Chicken Salad', calories: 400 },
-      { name: 'Avocado Toast', calories: 250 },
-      { name: 'Smoothie Bowl', calories: 350 },
-      { name: 'Pasta Primavera', calories: 500 },
+      { name: 'Oatmeal with Berries', calories: 300, type: 'Breakfast' },
+      { name: 'Grilled Chicken Salad', calories: 400, type: 'Lunch' },
+      { name: 'Vegetable Curry with Rice', calories: 450, type: 'Dinner' },
+      { name: 'Smoothie Bowl', calories: 350, type: 'Snack' },
+      { name: 'Avocado Toast', calories: 250, type: 'Breakfast' },
     ];
 
+    // Filtrer selon les préférences utilisateur et le nombre de calories restant
     const suggestions = allMeals
-      .filter((meal) => calorieLimit - meal.calories >= 0) // Respecter la limite calorique
-      .slice(0, 4); // Limiter à 4 suggestions
+      .filter(
+        (meal) =>
+          mealPreferences.includes(meal.type) && calorieLimit - meal.calories >= 0
+      )
+      .slice(0, 4);
 
     setSuggestedMeals(suggestions);
   };
@@ -68,7 +83,7 @@ export default function HomeScreen() {
     );
   }
 
-  const calorieNeeds = userData?.calorieNeeds || 2000; // Calorie Needs par défaut
+  const calorieNeeds = userData?.calorieNeeds || 2000;
 
   return (
     <ScrollView style={styles.container}>
@@ -81,44 +96,45 @@ export default function HomeScreen() {
       {/* Daily Summary */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Daily Summary</Text>
-
-        {/* Calories Goal */}
         <View style={styles.row}>
           <Text>Calories Goal</Text>
           <Text>{calorieNeeds} kcal</Text>
         </View>
-
-        {/* Consumed */}
         <View style={styles.row}>
           <Text>Consumed</Text>
           <Text>{consumedCalories} kcal</Text>
         </View>
-
-        {/* Remaining */}
         <View style={styles.row}>
           <Text>Remaining</Text>
           <Text>{calorieNeeds - consumedCalories} kcal</Text>
         </View>
       </View>
 
+      {/* Historique du dernier jour */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Last Day History</Text>
+        {lastDayHistory ? (
+          <>
+            <Text style={styles.historyDate}>{lastDayHistory.date}</Text>
+            <Text>Total Calories: {lastDayHistory.totalCalories} kcal</Text>
+            {lastDayHistory.meals.map((meal, index) => (
+              <View key={index} style={styles.historyMeal}>
+                <Text>{meal.type}: {meal.name} ({meal.calories} kcal)</Text>
+              </View>
+            ))}
+          </>
+        ) : (
+          <Text>No history available.</Text>
+        )}
+      </View>
+
       {/* Suggested Meals */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Suggested Meals</Text>
         {suggestedMeals.map((meal, index) => (
-          <TouchableOpacity key={index} style={styles.mealItem}>
-            <Text>{meal.name}</Text>
+          <View key={index} style={styles.mealItem}>
+            <Text>{meal.type}: {meal.name}</Text>
             <Text>{meal.calories} kcal</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Historique */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>History</Text>
-        {history.map((entry, index) => (
-          <View key={index} style={styles.row}>
-            <Text>{entry.name}</Text>
-            <Text>{entry.calories} kcal</Text>
           </View>
         ))}
       </View>
@@ -162,5 +178,15 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  historyDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  historyMeal: {
+    marginLeft: 10,
+    fontSize: 16,
+    marginBottom: 5,
   },
 });
