@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { getDatabase, ref, get } from 'firebase/database';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
 export default function HomeScreen() {
   const [userData, setUserData] = useState(null);
   const [consumedCalories, setConsumedCalories] = useState(0);
-  const [suggestedMeals, setSuggestedMeals] = useState([]);
+  const [dailyMeals, setDailyMeals] = useState([]);
   const [lastDayHistory, setLastDayHistory] = useState(null);
+  const [suggestedMeals, setSuggestedMeals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,9 +27,8 @@ export default function HomeScreen() {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
-          setConsumedCalories(data.consumedCalories || 0); // Liaison avec la base de données
-          fetchLastDayHistory(data.mealHistory);
-          generateSuggestedMeals(data.mealPreference, data.calorieNeeds || 2000);
+          setConsumedCalories(data.consumedCalories || 0);
+          fetchDailyMeals(data.mealHistory);
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -43,34 +43,40 @@ export default function HomeScreen() {
     fetchUserData();
   }, []);
 
-  const fetchLastDayHistory = (mealHistory) => {
-    if (!mealHistory || Object.keys(mealHistory).length === 0) {
-      setLastDayHistory(null);
-      return;
+  const fetchDailyMeals = (mealHistory) => {
+    const today = new Date().toISOString().split('T')[0];
+    if (mealHistory && mealHistory[today]) {
+      setDailyMeals(mealHistory[today].meals || []);
+    } else {
+      setDailyMeals([]);
     }
-
-    const sortedDates = Object.keys(mealHistory).sort((a, b) => new Date(b) - new Date(a));
-    const lastDay = sortedDates[0];
-    setLastDayHistory({ date: lastDay, ...mealHistory[lastDay] });
   };
 
-  const generateSuggestedMeals = (mealPreferences, calorieLimit) => {
-    const allMeals = [
-      { name: 'Oatmeal with Berries', calories: 300, type: 'Breakfast' },
-      { name: 'Grilled Chicken Salad', calories: 400, type: 'Lunch' },
-      { name: 'Vegetable Curry with Rice', calories: 450, type: 'Dinner' },
-      { name: 'Smoothie Bowl', calories: 350, type: 'Snack' },
-      { name: 'Avocado Toast', calories: 250, type: 'Breakfast' },
-    ];
+  const markAsConsumed = async (meal, index) => {
+    try {
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        Alert.alert('Erreur', 'Utilisateur non connecté.');
+        return;
+      }
 
-    const suggestions = allMeals
-      .filter(
-        (meal) =>
-          mealPreferences.includes(meal.type) && calorieLimit - meal.calories >= 0
-      )
-      .slice(0, 4);
+      const db = getDatabase();
+      const consumedRef = ref(db, `users/${userId}/mealHistory/${new Date().toISOString().split('T')[0]}/meals/${index}`);
+      const updatedMeal = { ...meal, consumed: true };
 
-    setSuggestedMeals(suggestions);
+      await update(consumedRef, updatedMeal);
+
+      setDailyMeals((prev) => {
+        const updatedMeals = [...prev];
+        updatedMeals[index] = updatedMeal;
+        return updatedMeals;
+      });
+
+      setConsumedCalories((prev) => prev + meal.calories);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du repas :', error);
+      Alert.alert('Erreur', 'Impossible de mettre à jour le repas.');
+    }
   };
 
   if (loading) {
@@ -105,6 +111,27 @@ export default function HomeScreen() {
         <View style={styles.row}>
           <Text>Remaining</Text>
           <Text>{calorieNeeds - consumedCalories} kcal</Text>
+        </View>
+        <View style={styles.dailyMeals}>
+          {dailyMeals.length > 0 ? (
+            dailyMeals.map((meal, index) => (
+              <View key={index} style={styles.mealRow}>
+                <Text style={styles.mealText}>
+                  {meal.type}: {meal.name} ({meal.calories} kcal)
+                </Text>
+                {!meal.consumed && (
+                  <TouchableOpacity
+                    style={styles.consumedButton}
+                    onPress={() => markAsConsumed(meal, index)}
+                  >
+                    <Text style={styles.consumedButtonText}>Consumed</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No meals planned for today.</Text>
+          )}
         </View>
       </View>
 
@@ -178,16 +205,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  mealItem: {
-    backgroundColor: '#D1C4E9',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+  dailyMeals: {
+    marginTop: 20,
   },
-  mealItemText: {
+  mealRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    padding: 10,
+    backgroundColor: '#D1C4E9',
+    borderRadius: 10,
+  },
+  mealText: {
     fontSize: 16,
     color: '#4B2B7F',
-    marginBottom: 5,
+  },
+  consumedButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  consumedButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  emptyText: {
+    fontStyle: 'italic',
+    color: '#888',
   },
   historyDate: {
     fontSize: 18,
@@ -201,17 +247,10 @@ const styles = StyleSheet.create({
     color: '#4B2B7F',
     marginBottom: 5,
   },
-  suggestedMealsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  suggestedMealBox: {
+  mealItem: {
     backgroundColor: '#D1C4E9',
+    padding: 15,
     borderRadius: 10,
-    width: '48%',
     marginBottom: 10,
-    padding: 10,
-    alignItems: 'center',
   },
 });

@@ -11,17 +11,12 @@ export default function MealPlan({ navigation }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [mealHistory, setMealHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
-  const [dailyTotalCalories, setDailyTotalCalories] = useState(0); // Nouveau state pour totalCalories
 
   useEffect(() => {
     fetchUserData();
     fetchUserPreferences();
     fetchMealHistory();
   }, []);
-
-  useEffect(() => {
-    fetchTotalCaloriesForDate();
-  }, [selectedDate, mealHistory]);
 
   const fetchUserData = async () => {
     try {
@@ -106,17 +101,6 @@ export default function MealPlan({ navigation }) {
     });
   };
 
-  const fetchTotalCaloriesForDate = () => {
-    const formattedDate = selectedDate.toISOString().split('T')[0];
-    const dayData = mealHistory.find((day) => day.date === formattedDate);
-
-    if (dayData) {
-      setDailyTotalCalories(dayData.totalCalories || 0);
-    } else {
-      setDailyTotalCalories(0); // Pas de données pour cette date
-    }
-  };
-
   const addMeal = (meal, type) => {
     const totalCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0);
 
@@ -176,11 +160,13 @@ export default function MealPlan({ navigation }) {
     setShowDatePicker(false);
   };
 
+  const selectedCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0); // Calcul des calories sélectionnées
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>
-        Selected Calories: {dailyTotalCalories} / {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
+        Selected Calories: {selectedCalories} / {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
       </Text>
 
       <View style={styles.categoryContainer}>
@@ -259,18 +245,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#F9F8FF', 
+    backgroundColor: '#F9F8FF',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#6C4AB6', 
+    color: '#6C4AB6',
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#7E7E7E', 
+    color: '#7E7E7E',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -281,7 +267,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   categoryButton: {
-    backgroundColor: '#6C4AB6', 
+    backgroundColor: '#6C4AB6',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
@@ -328,7 +314,7 @@ const styles = StyleSheet.create({
     color: '#4B4B4B',
   },
   dateButton: {
-    backgroundColor: '#6C4AB6', 
+    backgroundColor: '#6C4AB6',
     padding: 12,
     borderRadius: 15,
     alignItems: 'center',
@@ -374,8 +360,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 4,
-    marginTop: 2, 
-    marginBottom: 20, // Ajout d'un espace de 10 pixels sous le bouton
+    marginTop: 2,
+    marginBottom: 20,
   },
   saveButtonText: {
     color: '#FFFFFF',
