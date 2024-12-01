@@ -18,32 +18,35 @@ export default function MealPlan({ navigation }) {
     fetchMealHistory();
   }, []);
 
-  const fetchUserData = async () => {
-    try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        Alert.alert('Erreur', 'Utilisateur non connecté.');
-        navigation.navigate('Login');
-        return;
-      }
-
-      const db = getDatabase();
-      const userRef = ref(db, `users/${userId}`);
-      const snapshot = await get(userRef);
-
+  const fetchUserData = () => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      Alert.alert('Erreur', 'Utilisateur non connecté.');
+      navigation.navigate('Login');
+      return;
+    }
+  
+    const db = getDatabase();
+    const userRef = ref(db, `users/${userId}`);
+  
+    // Ajout d'un listener en temps réel
+    onValue(userRef, (snapshot) => {
       if (snapshot.exists()) {
         const userData = snapshot.val();
-        calculateCalorieNeeds(userData, userId);
+        setUserCalorieNeeds(userData.calorieNeeds);
+        console.log(userData.calorieNeeds);
       } else {
         Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des données utilisateur :', error);
-      Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
-    }
+    });
   };
+  
+ 
+  
 
-  const calculateCalorieNeeds = async (data, userId) => {
+
+// On calcule Bmi et Bmr dans Graph lorsque weigth change
+ /* const calculateCalorieNeeds = async (data, userId) => {
     if (!data.bmi || !data.bmr) {
       Alert.alert('Erreur', 'Données BMI ou BMR manquantes.');
       setUserCalorieNeeds(2000); // Valeur par défaut si les données sont manquantes
@@ -61,7 +64,7 @@ export default function MealPlan({ navigation }) {
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des besoins caloriques :', error);
     }
-  };
+  };*/
 
   const fetchUserPreferences = () => {
     const userId = auth.currentUser?.uid;
