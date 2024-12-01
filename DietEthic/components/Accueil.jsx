@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { getDatabase, ref, get } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
@@ -7,7 +7,7 @@ export default function HomeScreen() {
   const [userData, setUserData] = useState(null);
   const [consumedCalories, setConsumedCalories] = useState(0);
   const [suggestedMeals, setSuggestedMeals] = useState([]);
-  const [lastDayHistory, setLastDayHistory] = useState(null); // Historique du dernier jour
+  const [lastDayHistory, setLastDayHistory] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,8 +26,8 @@ export default function HomeScreen() {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
-          setConsumedCalories(data.totalCalories || 0);
-          fetchLastDayHistory(data.mealHistory); // Appelle la fonction pour obtenir l'historique du dernier jour
+          setConsumedCalories(data.consumedCalories || 0); // Liaison avec la base de données
+          fetchLastDayHistory(data.mealHistory);
           generateSuggestedMeals(data.mealPreference, data.calorieNeeds || 2000);
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
@@ -49,9 +49,8 @@ export default function HomeScreen() {
       return;
     }
 
-    // Trier les dates dans l'historique pour trouver le dernier jour
     const sortedDates = Object.keys(mealHistory).sort((a, b) => new Date(b) - new Date(a));
-    const lastDay = sortedDates[0]; // Récupère la dernière date
+    const lastDay = sortedDates[0];
     setLastDayHistory({ date: lastDay, ...mealHistory[lastDay] });
   };
 
@@ -64,7 +63,6 @@ export default function HomeScreen() {
       { name: 'Avocado Toast', calories: 250, type: 'Breakfast' },
     ];
 
-    // Filtrer selon les préférences utilisateur et le nombre de calories restant
     const suggestions = allMeals
       .filter(
         (meal) =>
