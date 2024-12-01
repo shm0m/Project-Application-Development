@@ -159,4 +159,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     width: '80%',
   },
+  addButton: {
+    backgroundColor: '#8543f5',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginBottom: 20,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  quoteCard: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#e8d6fc',
+    borderRadius: 10,
+    width: '90%',
+    alignItems: 'center',
+  },
+  quoteText: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: '#5b3d90',
+    textAlign: 'center',
+  },
 });
