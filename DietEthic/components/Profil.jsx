@@ -21,7 +21,7 @@ export default function ProfileScreen({ navigation }) {
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState("https://i.sstatic.net/YaL3s.jpg");
 
-  // États locaux pour l'édition
+  // Local states for editing
   const [name, setName] = useState("");
   const [mail, setMail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,13 +48,13 @@ export default function ProfileScreen({ navigation }) {
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
 
-      // Écouter les données utilisateur en temps réel
+     // Listen to user data in real time
       const unsubscribe = onValue(userRef, (snapshot) => {
-        if (snapshot.exists() && !isEditing) { // Ne pas mettre à jour les champs en mode édition
+        if (snapshot.exists() && !isEditing) { // Do not update fields in edit mode
           const data = snapshot.val();
           setUserData(data);
 
-          // Mettre à jour les champs uniquement si non en mode édition
+          // Update fields only if not in edit mode
           setName(data.name || "");
           setMail(data.mail || "");
           setPassword(data.password || "");
@@ -65,12 +65,12 @@ export default function ProfileScreen({ navigation }) {
           setMealPreference(data.mealPreference || []);
           setProfileImage(data.profileImage || profileImage);
 
-          // Met à jour le dernier poids
+        // Updates the last weight
           const last = data.weightHistory?.[data.weightHistory.length - 1];
           setLastWeight(last || "No data");
           setWeight(last);
         }
-        setLoading(false); // Chargement terminé
+        setLoading(false); // Loading completed
       });
 
       return unsubscribe;
@@ -78,7 +78,7 @@ export default function ProfileScreen({ navigation }) {
 
     const unsubscribe = fetchUserDataRealtime();
     return () => unsubscribe();
-  }, [navigation, isEditing]); // Ajout de `isEditing` comme dépendance
+  }, [navigation, isEditing]); // Added `isEditing` as a dependency
 
   const handleSaveProfile = async () => {
     try {
@@ -246,7 +246,7 @@ const calculateCalorie=()=>{
         </>
       ) : (
         <>
-          <Text style={styles.title}>Informations du Profil</Text>
+          <Text style={styles.title}>Profil Information </Text>
           <Text style={styles.infoText}>Name : {userData.name}</Text>
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
