@@ -119,6 +119,14 @@ export default function HomeScreen() {
           <Text>Calories Goal</Text>
           <Text>{calorieNeeds} kcal</Text>
         </View>
+        <View style={styles.row}>
+          <Text>Consumed</Text>
+          <Text>{consumedCalories} kcal</Text>
+        </View>
+        <View style={styles.row}>
+          <Text>Remaining</Text>
+          <Text>{calorieNeeds - consumedCalories} kcal</Text>
+        </View>
       </View>
 
       {/* Historique du dernier jour */}
