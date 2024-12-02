@@ -46,7 +46,7 @@ export default function MealPlan({ navigation }) {
   const calculateCalorieNeeds = async (data, userId) => {
     if (!data.bmi || !data.bmr) {
       Alert.alert('Erreur', 'Données BMI ou BMR manquantes.');
-      setUserCalorieNeeds(2000); // Valeur par défaut si les données sont manquantes
+      setUserCalorieNeeds(2000); 
       return;
     }
 

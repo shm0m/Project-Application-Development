@@ -47,14 +47,20 @@ export default function ProfileScreen({ navigation }) {
         if (snapshot.exists() && !isEditing) {
           const data = snapshot.val();
           setUserData(data);
-          const heights = Array.isArray(data.heightHistory) ? data.heightHistory : [];
-          setLastHeight(heights);
+  
+          // Initialiser `height` et `lastHeight` avec les données existantes
+          if (data.height) {
+            setHeight(data.height.toString());
+            setLastHeight([data.height]); // Initialise lastHeight avec la taille existante
+          } else {
+            setHeight("");
+            setLastHeight([]); // Si aucune taille n'existe, on garde un tableau vide
+          }
   
           setName(data.name || "");
           setMail(data.mail || "");
           setPassword(data.password || "");
           setAge(data.age?.toString() || "");
-          setHeight(data.height?.toString() || "");
           setGender(data.gender || "");
           setGoal(data.goal || "");
           setMealPreference(data.mealPreference || []);
@@ -75,6 +81,7 @@ export default function ProfileScreen({ navigation }) {
   }, [navigation, isEditing]);
   
   
+  
   const getLatestHeight = () => {
     return lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : "";
   };
@@ -88,13 +95,16 @@ export default function ProfileScreen({ navigation }) {
         return;
       }
   
-      const currentHeight = height || getLatestHeight(); // Utilise la dernière taille si non modifiée
-      const currentWeight = weight || userData.weight;
-      const currentAge = age || userData.age;
+
+      const currentHeight = height || (lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : null);
+      const currentWeight = weight || userData.weight; 
+      const currentAge = age || userData.age; 
       const currentGender = gender || userData.gender;
   
+      // Recalculer BMI et BMR uniquement si les valeurs nécessaires sont présentes
       const newBMI = calculateBMI(currentHeight, currentWeight);
       const newBMR = calculateBMR(currentWeight, currentHeight, currentAge, currentGender);
+  
       const newCalorieNeeds = Math.round(
         newBMR * (newBMI < 18.5 ? 1.2 : newBMI < 25 ? 1.5 : 1.8)
       );
@@ -103,10 +113,9 @@ export default function ProfileScreen({ navigation }) {
         name,
         mail,
         password,
-        age: parseInt(currentAge, 10),
-        heightHistory: [...lastHeight, parseFloat(currentHeight)], // Ajouter la nouvelle taille à l'historique
-        gender: currentGender,
-        weight: parseFloat(currentWeight),
+        age: parseInt(age || userData.age, 10),
+        height: parseFloat(currentHeight),
+        gender: gender || userData.gender,
         mealPreference,
         profileImage,
         bmi: parseFloat(newBMI),
@@ -119,13 +128,14 @@ export default function ProfileScreen({ navigation }) {
       await update(userRef, updatedData);
   
       Alert.alert("Succès", "Profil mis à jour avec succès !");
-      setLastHeight([...lastHeight, parseFloat(currentHeight)]); // Met à jour l'historique des tailles
+      setLastHeight((prev) => [...prev, currentHeight]); // Ajouter la nouvelle taille dans lastHeight
       setIsEditing(false);
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error);
       Alert.alert("Erreur", "Une erreur s'est produite lors de la mise à jour.");
     }
   };
+  
   
 
   const toggleMealPreference = (meal) => {
@@ -325,7 +335,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.infoText}>Name : {userData.name}</Text>
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
-          <Text style={styles.infoText}>Taille : {latestHeight} cm</Text>
+          <Text style={styles.infoText}>Taille : {lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : "No data"} cm</Text>
           <Text style={styles.infoText}>Weight: {userData.weight} kg</Text>
 
           <TouchableOpacity
