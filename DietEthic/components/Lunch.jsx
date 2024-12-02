@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, ScrollView, View, Image, TouchableOpacity } from 'react-native';
 
-const lunchOptions = [
+export const lunchOptions = [
   { name: 'Grilled Chicken Salad', calories: 400, image: 'https://i.pinimg.com/736x/c1/16/46/c11646a428c4232d0e62aacaefd2c91b.jpg' },
   { name: 'Spaghetti Bolognese', calories: 600, image: 'https://i.pinimg.com/736x/b3/f1/ad/b3f1ada878dcbf073760058dd30c607c.jpg' },
   { name: 'Vegetable Stir Fry with Rice', calories: 450, image: 'https://i.pinimg.com/736x/00/8f/71/008f7199633912aff659c9ab16e357ba.jpg' },
