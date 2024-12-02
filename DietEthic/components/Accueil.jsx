@@ -38,7 +38,6 @@ export default function HomeScreen() {
           setConsumedCalories(data.totalCalories || 0);
           setCalorieNeeds(data.calorieNeeds || 0);
           fetchLastDayHistory(data.mealHistory); 
-         // generateSuggestedMeals();
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -61,13 +60,13 @@ export default function HomeScreen() {
 
     
     const sortedDates = Object.keys(mealHistory).sort((a, b) => new Date(b) - new Date(a));
-    const lastDay = sortedDates[0]; // Récupère la dernière date
+    const lastDay = sortedDates[0]; 
     setLastDayHistory({ date: lastDay, ...mealHistory[lastDay] });
   };
    
   const generateSuggestedMeals = () => {
     
- // Sélection aléatoire
+
  const randomBreakfast = getRandomElements(breakfastOptions, 1);
  const randomLunch = getRandomElements(lunchOptions, 1);
  const randomDinner = getRandomElements(dinnerOptions, 1);
@@ -86,10 +85,10 @@ export default function HomeScreen() {
  function getRandomElements(array, count) {
   if (!Array.isArray(array)) {
     console.error('L\'argument "array" doit être un tableau valide, reçu :', array);
-    return []; // Retourne un tableau vide pour éviter les erreurs
+    return []; 
   }
-  const shuffled = [...array].sort(() => 0.5 - Math.random()); // Mélange aléatoire
-  return shuffled.slice(0, count); // Retourne les premiers 'count' éléments
+  const shuffled = [...array].sort(() => 0.5 - Math.random()); 
+  return shuffled.slice(0, count); 
 }
 
 
@@ -106,7 +105,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Titre */}
+      {/* Title */}
       <Text style={styles.welcomeText}>
         Welcome Back, {userData?.name || 'User'}!
       </Text>
@@ -129,7 +128,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Historique du dernier jour */}
+      {}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Last Day History</Text>
         {lastDayHistory ? (

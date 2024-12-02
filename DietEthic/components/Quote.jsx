@@ -5,13 +5,13 @@ import quotes from '../assets/quotes.json';
 const Quote = () => {
   const [randomQuote, setRandomQuote] = useState({});
 
-  // Fonction pour sélectionner une citation aléatoire
+
   const getRandomQuote = () => {
     const randomIndex = Math.floor(Math.random() * quotes.quotes.length);
     return quotes.quotes[randomIndex];
   };
 
-  // Charger une citation aléatoire au montage du composant
+
   useEffect(() => {
     const quote = getRandomQuote();
     setRandomQuote(quote);

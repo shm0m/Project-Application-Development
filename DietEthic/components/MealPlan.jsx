@@ -164,7 +164,7 @@ export default function MealPlan({ navigation }) {
     setShowDatePicker(false);
   };
 
-  const selectedCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0); // Calcul des calories sélectionnées
+  const selectedCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0); 
 
   return (
     <ScrollView style={styles.container}>

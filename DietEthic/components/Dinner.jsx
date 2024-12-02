@@ -39,7 +39,7 @@ export const dinnerOptions = [
 ];
 
 export default function Dinner({ route }) {
-  const { addMeal } = route.params; // Récupération de la fonction passée via les paramètres de navigation
+  const { addMeal } = route.params; 
 
   return (
     <ScrollView style={styles.container}>

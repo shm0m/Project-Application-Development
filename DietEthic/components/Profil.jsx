@@ -48,13 +48,12 @@ export default function ProfileScreen({ navigation }) {
           const data = snapshot.val();
           setUserData(data);
   
-          // Initialiser `height` et `lastHeight` avec les données existantes
           if (data.height) {
             setHeight(data.height.toString());
-            setLastHeight([data.height]); // Initialise lastHeight avec la taille existante
+            setLastHeight([data.height]); 
           } else {
             setHeight("");
-            setLastHeight([]); // Si aucune taille n'existe, on garde un tableau vide
+            setLastHeight([]); 
           }
   
           setName(data.name || "");
@@ -333,7 +332,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.infoText}>Name : {userData.name}</Text>
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
-          <Text style={styles.infoText}>Taille : {lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : "No data"} cm</Text>
+          <Text style={styles.infoText}>Height : {lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : "No data"} cm</Text>
           <Text style={styles.infoText}>Weight: {userData.weight} kg</Text>
 
           <TouchableOpacity

@@ -9,7 +9,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erreur', 'Veuillez entrer votre email et votre mot de passe.');
+      Alert.alert('Erreur', 'Please ensure that you entered the right informations');
       return;
     }
 
@@ -19,19 +19,19 @@ export default function LoginScreen({ navigation }) {
 
       console.log('Connexion réussie pour l\'utilisateur :', user);
 
-      Alert.alert('Succès', 'Connexion réussie !');
+      Alert.alert('Success', 'Connection sucessfull !');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Main', params: { screen: 'Profil' } }],
       });
     } catch (error) {
       if (error.code === 'auth/user-not-found') {
-        Alert.alert('Erreur', "Aucun utilisateur trouvé avec cet email.");
+        Alert.alert('Error', "User not found");
       } else if (error.code === 'auth/wrong-password') {
-        Alert.alert('Erreur', "Mot de passe incorrect.");
+        Alert.alert('Error', "Wrong password");
       } else {
-        console.error('Erreur lors de la connexion :', error);
-        Alert.alert('Erreur', error.message);
+        console.error('Error while connecting :', error);
+        Alert.alert('Error', error.message);
       }
     }
   };
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#6A4FD8', // Couleur violette
+    color: '#6A4FD8', 
     marginBottom: 30,
   },
   input: {
