@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, ScrollView, View, Image, TouchableOpacity } from 'react-native';
 
-const breakfastOptions = [
+export const breakfastOptions = [
   { name: 'Pancakes', calories: 350, image: 'https://i.pinimg.com/474x/25/72/3f/25723ff7d7b63a89265b6a9d1c6de237.jpg' },
   { name: 'Omelette', calories: 250, image: 'https://i.pinimg.com/474x/4c/0d/e8/4c0de8036b41f0ded861fd8babe6c183.jpg' },
   { name: 'Fruit Salad', calories: 150, image: 'https://i.pinimg.com/736x/bf/ef/97/bfef97712edce45e6299968f3d6072a8.jpg' },
