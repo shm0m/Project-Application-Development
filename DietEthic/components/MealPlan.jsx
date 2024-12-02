@@ -11,6 +11,7 @@ export default function MealPlan({ navigation }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [mealHistory, setMealHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
+  const [lastUserCalorieNeeds, setLastUserCalorieNeeds] = useState([]);
 
   useEffect(() => {
     fetchUserData();
@@ -26,14 +27,20 @@ export default function MealPlan({ navigation }) {
         navigation.navigate('Login');
         return;
       }
-
+  
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
       const snapshot = await get(userRef);
-
+  
       if (snapshot.exists()) {
         const userData = snapshot.val();
-        calculateCalorieNeeds(userData, userId);
+        if (userData.calorieNeeds) {
+          setUserCalorieNeeds(userData.calorieNeeds);
+          setLastUserCalorieNeeds(userData.lastUserCalorieNeeds || [userData.calorieNeeds]);
+        } else {
+          setUserCalorieNeeds(2000);
+          setLastUserCalorieNeeds([2000]);
+        }
       } else {
         Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
       }
@@ -42,26 +49,38 @@ export default function MealPlan({ navigation }) {
       Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
     }
   };
+  
 
   const calculateCalorieNeeds = async (data, userId) => {
+    const currentCalorieNeeds =
+      userCalorieNeeds || (lastUserCalorieNeeds.length > 0 ? lastUserCalorieNeeds[lastUserCalorieNeeds.length - 1] : 2000);
+  
     if (!data.bmi || !data.bmr) {
       Alert.alert('Erreur', 'Données BMI ou BMR manquantes.');
-      setUserCalorieNeeds(2000); 
+      setUserCalorieNeeds(currentCalorieNeeds);
       return;
     }
-
+  
     const calorieNeeds = Math.round(data.bmr * (data.bmi < 18.5 ? 1.2 : data.bmi < 25 ? 1.5 : 1.8));
     setUserCalorieNeeds(calorieNeeds);
-
+    setLastUserCalorieNeeds((prev) => {
+      const updatedNeeds = [...prev, calorieNeeds];
+      saveLastUserCalorieNeedsToFirebase(userId, updatedNeeds);
+      return updatedNeeds;
+    });
+  };
+  
+  const saveLastUserCalorieNeedsToFirebase = async (userId, needs) => {
     try {
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
-      await update(userRef, { calorieNeeds });
-      console.log('Calorie needs sauvegardé avec succès.');
+      await update(userRef, { lastUserCalorieNeeds: needs });
+      console.log('Historique des besoins caloriques mis à jour dans Firebase.');
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des besoins caloriques :', error);
+      console.error('Erreur lors de la sauvegarde des besoins caloriques dans Firebase :', error);
     }
   };
+  
 
   const fetchUserPreferences = () => {
     const userId = auth.currentUser?.uid;
@@ -160,15 +179,15 @@ export default function MealPlan({ navigation }) {
     setShowDatePicker(false);
   };
 
-  const selectedCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0); // Calcul des calories sélectionnées
+  const selectedCalories = selectedMeals.reduce((sum, meal) => sum + meal.calories, 0) || 0;
+
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Your Meal Plan</Text>
       <Text style={styles.subtitle}>
-        Selected Calories: {selectedCalories} / {userCalorieNeeds ? `${userCalorieNeeds} kcal` : 'Loading...'}
+        Selected Calories: {selectedCalories} / {lastUserCalorieNeeds.length > 0 ? `${lastUserCalorieNeeds[lastUserCalorieNeeds.length - 1]} kcal` : 'No data'}
       </Text>
-
       <View style={styles.categoryContainer}>
         {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((category) => (
           selectedCategories.includes(category) && (

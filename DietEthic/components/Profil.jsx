@@ -100,8 +100,6 @@ export default function ProfileScreen({ navigation }) {
       const currentWeight = weight || userData.weight; 
       const currentAge = age || userData.age; 
       const currentGender = gender || userData.gender;
-  
-      // Recalculer BMI et BMR uniquement si les valeurs nécessaires sont présentes
       const newBMI = calculateBMI(currentHeight, currentWeight);
       const newBMR = calculateBMR(currentWeight, currentHeight, currentAge, currentGender);
   
@@ -128,7 +126,7 @@ export default function ProfileScreen({ navigation }) {
       await update(userRef, updatedData);
   
       Alert.alert("Succès", "Profil mis à jour avec succès !");
-      setLastHeight((prev) => [...prev, currentHeight]); // Ajouter la nouvelle taille dans lastHeight
+      setLastHeight((prev) => [...prev, currentHeight]);
       setIsEditing(false);
     } catch (error) {
       console.error("Erreur lors de la mise à jour :", error);
