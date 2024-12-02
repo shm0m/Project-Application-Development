@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { getDatabase, ref, get, update } from 'firebase/database';
+import { getDatabase, ref, get } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
-
-// Import des plats depuis les fichiers externes
-import { breakfastItems } from './Breakfast';
-import { lunchItems } from './Lunch';
-import { dinnerItems } from './Dinner';
-import { snackItems } from './Snack';
-
+import {breakfastOptions} from './Breakfast';
+import {lunchOptions} from'./Lunch';
+import {dinnerOptions} from'./Dinner';
+import {snackRandomOptions} from'./Snack';
 export default function HomeScreen() {
   const [userData, setUserData] = useState(null);
   const [consumedCalories, setConsumedCalories] = useState(0);
-  const [dailyMeals, setDailyMeals] = useState([]);
-  const [lastDayHistory, setLastDayHistory] = useState(null);
   const [suggestedMeals, setSuggestedMeals] = useState([]);
+  const [lastDayHistory, setLastDayHistory] = useState(null); 
   const [loading, setLoading] = useState(true);
+  const [calorieNeeds, setCalorieNeeds] = useState(0);
+  
+  useEffect(() => {
+    
+    generateSuggestedMeals();
+  }, []); 
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -33,13 +35,10 @@ export default function HomeScreen() {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
-          setConsumedCalories(data.consumedCalories || 0);
-          fetchDailyMeals(data.mealHistory);
-          fetchLastDayHistory(data.mealHistory);
-          generateSuggestedMeals(
-            data.calorieNeeds - (data.consumedCalories || 0),
-            data.mealPreference || []
-          );
+          setConsumedCalories(data.totalCalories || 0);
+          setCalorieNeeds(data.calorieNeeds || 0);
+          fetchLastDayHistory(data.mealHistory); 
+         // generateSuggestedMeals();
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
@@ -52,80 +51,48 @@ export default function HomeScreen() {
     };
 
     fetchUserData();
-  }, []);
-
-  const fetchDailyMeals = (mealHistory) => {
-    const today = new Date().toISOString().split('T')[0];
-    if (mealHistory && mealHistory[today]) {
-      setDailyMeals(mealHistory[today].meals || []);
-    } else {
-      setDailyMeals([]);
-    }
-  };
+  }, [userData]);
 
   const fetchLastDayHistory = (mealHistory) => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = yesterday.toISOString().split('T')[0];
-
-    if (mealHistory && mealHistory[yesterdayDate]) {
-      const history = mealHistory[yesterdayDate];
-      setLastDayHistory({
-        date: yesterdayDate,
-        totalCalories: history.meals.reduce((sum, meal) => sum + meal.calories, 0),
-        meals: history.meals,
-      });
-    } else {
+    if (!mealHistory || Object.keys(mealHistory).length === 0) {
       setLastDayHistory(null);
-    }
-  };
-
-  const generateSuggestedMeals = (remainingCalories, mealPreferences) => {
-    if (!mealPreferences || remainingCalories <= 0) {
-      setSuggestedMeals([]);
       return;
     }
 
-    const allMeals = {
-      Breakfast: breakfastItems,
-      Lunch: lunchItems,
-      Dinner: dinnerItems,
-      Snacks: snackItems,
-    };
-
-    const filteredMeals = mealPreferences.flatMap((category) =>
-      allMeals[category]?.filter((meal) => meal.calories <= remainingCalories) || []
-    );
-
-    setSuggestedMeals(filteredMeals.slice(0, 5)); // Limite de 5 suggestions
+    
+    const sortedDates = Object.keys(mealHistory).sort((a, b) => new Date(b) - new Date(a));
+    const lastDay = sortedDates[0]; // Récupère la dernière date
+    setLastDayHistory({ date: lastDay, ...mealHistory[lastDay] });
+  };
+   
+  const generateSuggestedMeals = () => {
+    
+ // Sélection aléatoire
+ const randomBreakfast = getRandomElements(breakfastOptions, 1);
+ const randomLunch = getRandomElements(lunchOptions, 1);
+ const randomDinner = getRandomElements(dinnerOptions, 1);
+ const randomSnack = getRandomElements(snackRandomOptions, 1);
+ const resultMeals = [randomBreakfast,
+   randomLunch,
+   randomDinner,
+   randomSnack
+ ].flat();
+ 
+  
+ setSuggestedMeals(resultMeals);
   };
 
-  const markAsConsumed = async (meal, index) => {
-    try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        Alert.alert('Erreur', 'Utilisateur non connecté.');
-        return;
-      }
+ 
+ function getRandomElements(array, count) {
+  if (!Array.isArray(array)) {
+    console.error('L\'argument "array" doit être un tableau valide, reçu :', array);
+    return []; // Retourne un tableau vide pour éviter les erreurs
+  }
+  const shuffled = [...array].sort(() => 0.5 - Math.random()); // Mélange aléatoire
+  return shuffled.slice(0, count); // Retourne les premiers 'count' éléments
+}
 
-      const db = getDatabase();
-      const consumedRef = ref(db, `users/${userId}/mealHistory/${new Date().toISOString().split('T')[0]}/meals/${index}`);
-      const updatedMeal = { ...meal, consumed: true };
 
-      await update(consumedRef, updatedMeal);
-
-      setDailyMeals((prev) => {
-        const updatedMeals = [...prev];
-        updatedMeals[index] = updatedMeal;
-        return updatedMeals;
-      });
-
-      setConsumedCalories((prev) => prev + meal.calories);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du repas :', error);
-      Alert.alert('Erreur', 'Impossible de mettre à jour le repas.');
-    }
-  };
 
   if (loading) {
     return (
@@ -135,7 +102,7 @@ export default function HomeScreen() {
     );
   }
 
-  const calorieNeeds = userData?.calorieNeeds || 2000;
+  //const calorieNeeds = userData?.calorieNeeds || 2000;
 
   return (
     <ScrollView style={styles.container}>
@@ -152,35 +119,6 @@ export default function HomeScreen() {
           <Text>Calories Goal</Text>
           <Text>{calorieNeeds} kcal</Text>
         </View>
-        <View style={styles.row}>
-          <Text>Consumed</Text>
-          <Text>{consumedCalories} kcal</Text>
-        </View>
-        <View style={styles.row}>
-          <Text>Remaining</Text>
-          <Text>{calorieNeeds - consumedCalories} kcal</Text>
-        </View>
-        <View style={styles.dailyMeals}>
-          {dailyMeals.length > 0 ? (
-            dailyMeals.map((meal, index) => (
-              <View key={index} style={styles.mealRow}>
-                <Text style={styles.mealText}>
-                  {meal.type}: {meal.name} ({meal.calories} kcal)
-                </Text>
-                {!meal.consumed && (
-                  <TouchableOpacity
-                    style={styles.consumedButton}
-                    onPress={() => markAsConsumed(meal, index)}
-                  >
-                    <Text style={styles.consumedButtonText}>Consumed</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No meals planned for today.</Text>
-          )}
-        </View>
       </View>
 
       {/* Historique du dernier jour */}
@@ -189,7 +127,7 @@ export default function HomeScreen() {
         {lastDayHistory ? (
           <>
             <Text style={styles.historyDate}>{lastDayHistory.date}</Text>
-            <Text>Total Calories Consumed: {lastDayHistory.totalCalories} kcal</Text>
+            <Text>Total Calories: {lastDayHistory.totalCalories} kcal</Text>
             {lastDayHistory.meals.map((meal, index) => (
               <View key={index} style={styles.historyMeal}>
                 <Text>{meal.type}: {meal.name} ({meal.calories} kcal)</Text>
@@ -197,23 +135,19 @@ export default function HomeScreen() {
             ))}
           </>
         ) : (
-          <Text>No history available for the last day.</Text>
+          <Text>No history available.</Text>
         )}
-      </View> 
+      </View>
 
       {/* Suggested Meals */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Suggested Meals</Text>
-        {suggestedMeals.length > 0 ? (
-          suggestedMeals.map((meal, index) => (
-            <View key={index} style={styles.mealItem}>
-              <Text>{meal.name}</Text>
-              <Text>{meal.calories} kcal</Text>
-            </View>
-          ))
-        ) : (
-          <Text>No meals to suggest.</Text>
-        )}
+        {suggestedMeals.map((meal, index) => (
+          <View key={index} style={styles.mealItem}>
+            <Text> {meal.name}</Text>
+            <Text>{meal.calories} kcal</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -257,35 +191,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  dailyMeals: {
-    marginTop: 20,
-  },
-  mealRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    padding: 10,
+  mealItem: {
     backgroundColor: '#D1C4E9',
+    padding: 15,
     borderRadius: 10,
+    marginBottom: 10,
   },
-  mealText: {
+  mealItemText: {
     fontSize: 16,
     color: '#4B2B7F',
-  },
-  consumedButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  consumedButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    fontStyle: 'italic',
-    color: '#888',
+    marginBottom: 5,
   },
   historyDate: {
     fontSize: 18,
@@ -299,10 +214,17 @@ const styles = StyleSheet.create({
     color: '#4B2B7F',
     marginBottom: 5,
   },
-  mealItem: {
-    backgroundColor: '#D1C4E9',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+  suggestedMealsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
+  suggestedMealBox: {
+    backgroundColor: '#D1C4E9',
+    borderRadius: 10,
+    width: '48%',
+    marginBottom: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
 });
