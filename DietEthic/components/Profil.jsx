@@ -28,6 +28,8 @@ export default function ProfileScreen({ navigation }) {
   const [bmi, setBmi] = useState(0);
   const [calorieNeeds, setCalorieNeeds] = useState(0);
   const mealOptions = ["Breakfast", "Lunch", "Snack", "Dinner"];
+  const [lastHeight, setLastHeight] = useState([]);
+  const latestHeight = lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : "No data";
 
   useEffect(() => {
     const fetchUserDataRealtime = () => {
@@ -37,18 +39,17 @@ export default function ProfileScreen({ navigation }) {
         navigation.navigate("Login");
         return;
       }
-
+  
       const db = getDatabase();
       const userRef = ref(db, `users/${userId}`);
-
-    
+  
       const unsubscribe = onValue(userRef, (snapshot) => {
         if (snapshot.exists() && !isEditing) {
-    
           const data = snapshot.val();
           setUserData(data);
-
-      
+          const heights = Array.isArray(data.heightHistory) ? data.heightHistory : [];
+          setLastHeight(heights);
+  
           setName(data.name || "");
           setMail(data.mail || "");
           setPassword(data.password || "");
@@ -58,52 +59,74 @@ export default function ProfileScreen({ navigation }) {
           setGoal(data.goal || "");
           setMealPreference(data.mealPreference || []);
           setProfileImage(data.profileImage || profileImage);
-
-      
+  
           const last = data.weightHistory?.[data.weightHistory.length - 1];
           setLastWeight(last || "No data");
           setWeight(last);
         }
-        setLoading(false); 
+        setLoading(false);
       });
-
+  
       return unsubscribe;
     };
-
+  
     const unsubscribe = fetchUserDataRealtime();
     return () => unsubscribe();
   }, [navigation, isEditing]);
+  
+  
+  const getLatestHeight = () => {
+    return lastHeight.length > 0 ? lastHeight[lastHeight.length - 1] : "";
+  };
+  
 
   const handleSaveProfile = async () => {
     try {
       const userId = auth.currentUser?.uid;
-      const db = getDatabase();
-      const userRef = ref(db, `users/${userId}`);
-
+      if (!userId) {
+        Alert.alert("Erreur", "Aucun utilisateur connecté.");
+        return;
+      }
+  
+      const currentHeight = height || getLatestHeight(); // Utilise la dernière taille si non modifiée
+      const currentWeight = weight || userData.weight;
+      const currentAge = age || userData.age;
+      const currentGender = gender || userData.gender;
+  
+      const newBMI = calculateBMI(currentHeight, currentWeight);
+      const newBMR = calculateBMR(currentWeight, currentHeight, currentAge, currentGender);
+      const newCalorieNeeds = Math.round(
+        newBMR * (newBMI < 18.5 ? 1.2 : newBMI < 25 ? 1.5 : 1.8)
+      );
+  
       const updatedData = {
         name,
         mail,
         password,
-        age: parseInt(age, 10),
-        height: parseFloat(height),
-        gender,
-        goal,
+        age: parseInt(currentAge, 10),
+        heightHistory: [...lastHeight, parseFloat(currentHeight)], // Ajouter la nouvelle taille à l'historique
+        gender: currentGender,
+        weight: parseFloat(currentWeight),
         mealPreference,
         profileImage,
-        weight,
-        bmi,
-        bmr,
-        calorieNeeds,
+        bmi: parseFloat(newBMI),
+        bmr: parseFloat(newBMR),
+        calorieNeeds: newCalorieNeeds,
       };
-
+  
+      const db = getDatabase();
+      const userRef = ref(db, `users/${userId}`);
       await update(userRef, updatedData);
-
-      Alert.alert("Success", "Profile updated successfully!");
+  
+      Alert.alert("Succès", "Profil mis à jour avec succès !");
+      setLastHeight([...lastHeight, parseFloat(currentHeight)]); // Met à jour l'historique des tailles
       setIsEditing(false);
     } catch (error) {
-      console.error("Error while updating:", error);
+      console.error("Erreur lors de la mise à jour :", error);
+      Alert.alert("Erreur", "Une erreur s'est produite lors de la mise à jour.");
     }
   };
+  
 
   const toggleMealPreference = (meal) => {
     setMealPreference((prev) =>
@@ -214,7 +237,7 @@ export default function ProfileScreen({ navigation }) {
     );
     setCalorieNeeds(cn);
   };
-  const onHeightChanged = (val) => {
+  const onHeigtChanged = (val) => {
     setHeight(val);
     calculateCalorie();
   };
@@ -264,7 +287,7 @@ export default function ProfileScreen({ navigation }) {
             style={styles.input}
             placeholder="Height"
             value={height}
-            onChangeText={onHeightChanged}
+            onChangeText={onHeigtChanged}
             keyboardType="numeric"
           />
 
@@ -302,7 +325,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.infoText}>Name : {userData.name}</Text>
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
-          <Text style={styles.infoText}>Taille : {userData.height} cm</Text>
+          <Text style={styles.infoText}>Taille : {latestHeight} cm</Text>
           <Text style={styles.infoText}>Weight: {userData.weight} kg</Text>
 
           <TouchableOpacity
