@@ -135,7 +135,7 @@ import { Text, StyleSheet, ScrollView, View, TouchableOpacity, Image} from 'reac
       color: '#888',
     },
     addButton: {
-      backgroundColor: '#4CAF50',
+      backgroundColor: '#6A4FD8',
       padding: 10,
       borderRadius: 5,
     },
