@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { getDatabase, ref, onValue, update } from 'firebase/database';
+import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../FirebaseConfig';
 
 // Import des plats depuis les fichiers externes
@@ -18,39 +18,40 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const db = getDatabase();
-    const userId = auth.currentUser?.uid;
+    const fetchUserData = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+          Alert.alert('Erreur', 'Aucun utilisateur connecté.');
+          return;
+        }
 
-    if (!userId) {
-      Alert.alert('Erreur', 'Aucun utilisateur connecté.');
-      return;
-    }
+        const db = getDatabase();
+        const userRef = ref(db, `users/${userId}`);
+        const snapshot = await get(userRef);
 
-    const userRef = ref(db, `users/${userId}`);
-
-    const unsubscribe = onValue(
-      userRef,
-      (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
           setUserData(data);
           setConsumedCalories(data.consumedCalories || 0);
           fetchDailyMeals(data.mealHistory);
           fetchLastDayHistory(data.mealHistory);
-          generateSuggestedMeals(); // Appel sans dépendre des préférences ni des calories
+          generateSuggestedMeals(
+            data.calorieNeeds - (data.consumedCalories || 0),
+            data.mealPreference || []
+          );
         } else {
           Alert.alert('Erreur', 'Aucune donnée utilisateur trouvée.');
         }
-        setLoading(false);
-      },
-      (error) => {
+      } catch (error) {
         console.error('Erreur lors de la récupération des données utilisateur :', error);
         Alert.alert('Erreur', "Impossible de récupérer les données utilisateur.");
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    return () => unsubscribe(); // Nettoyage de l'écouteur à la désactivation du composant
+    fetchUserData();
   }, []);
 
   const fetchDailyMeals = (mealHistory) => {
@@ -79,19 +80,24 @@ export default function HomeScreen() {
     }
   };
 
-  const generateSuggestedMeals = () => {
-    // Fusionner tous les plats disponibles
-    const allMeals = [...breakfastItems, ...lunchItems, ...dinnerItems, ...snackItems];
+  const generateSuggestedMeals = (remainingCalories, mealPreferences) => {
+    if (!mealPreferences || remainingCalories <= 0) {
+      setSuggestedMeals([]);
+      return;
+    }
 
-    // Sélectionner aléatoirement 5 plats
-    const randomMeals = getRandomElements(allMeals, 5);
-    setSuggestedMeals(randomMeals);
-  };
+    const allMeals = {
+      Breakfast: breakfastItems,
+      Lunch: lunchItems,
+      Dinner: dinnerItems,
+      Snacks: snackItems,
+    };
 
-  const getRandomElements = (array, count) => {
-    if (!Array.isArray(array)) return [];
-    const shuffled = [...array].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+    const filteredMeals = mealPreferences.flatMap((category) =>
+      allMeals[category]?.filter((meal) => meal.calories <= remainingCalories) || []
+    );
+
+    setSuggestedMeals(filteredMeals.slice(0, 5)); // Limite de 5 suggestions
   };
 
   const markAsConsumed = async (meal, index) => {
@@ -103,8 +109,7 @@ export default function HomeScreen() {
       }
 
       const db = getDatabase();
-      const today = new Date().toISOString().split('T')[0];
-      const consumedRef = ref(db, `users/${userId}/mealHistory/${today}/meals/${index}`);
+      const consumedRef = ref(db, `users/${userId}/mealHistory/${new Date().toISOString().split('T')[0]}/meals/${index}`);
       const updatedMeal = { ...meal, consumed: true };
 
       await update(consumedRef, updatedMeal);
@@ -194,7 +199,7 @@ export default function HomeScreen() {
         ) : (
           <Text>No history available for the last day.</Text>
         )}
-      </View>
+      </View> 
 
       {/* Suggested Meals */}
       <View style={styles.card}>
