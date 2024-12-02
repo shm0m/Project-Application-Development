@@ -328,7 +328,7 @@ export default function ProfileScreen({ navigation }) {
         </>
       ) : (
         <>
-          <Text style={styles.title}>Profil Informations </Text>
+          <Text style={styles.title}>Profile Informations </Text>
           <Text style={styles.infoText}>Name : {userData.name}</Text>
           <Text style={styles.infoText}>Email : {userData.mail}</Text>
           <Text style={styles.infoText}>Age : {userData.age}</Text>
